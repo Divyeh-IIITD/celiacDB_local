@@ -6,6 +6,7 @@ node_modules/
 .venv*/
 .haddock3-src/
 .DS_Store
+__MACOSX/
 
 # Runtime uploads & temp data
 temp_uploads/
