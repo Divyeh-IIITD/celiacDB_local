@@ -1,0 +1,5 @@
+! Generated ambiguous interaction restraints.
+! Confirm residue numbering and segment IDs against the prepared PDB files.
+assign (segid REC and resid 53 55 57)
+       (segid PEP and resid 1 4 7)
+       2.0 2.0 0.0

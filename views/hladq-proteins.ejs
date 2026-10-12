@@ -1,0 +1,258 @@
+
+
+<div class="container">
+  <div class="header-section">
+    <h2>HLA-DQ Proteins Database</h2>
+    <p>View details and analysis for all HLA-DQ proteins</p>
+    <a href="/" class="btn btn-secondary">← Back to Home</a>
+  </div>
+
+  <!-- Debug Info -->
+  <div class="debug-info">
+    <p><strong>Found <%= proteins.length %> proteins in database</strong></p>
+  </div>
+
+  <!-- Protein Selection Dropdown (like your old logic) -->
+  <div class="selection-section">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="card-title">📋 Select a Protein to View Details</h4>
+        <form id="proteinForm" class="form-row">
+          <select name="protein" id="proteinSelect" class="form-select">
+            <option value="">Choose a protein...</option>
+            <% proteins.forEach(protein => { %>
+              <option value="<%= protein._id %>"><%= protein.name %></option>
+            <% }) %>
+          </select>
+          <button class="btn btn-primary" type="submit">View Details</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Proteins Grid (showing all) -->
+  <% if (proteins.length === 0) { %>
+    <div class="no-proteins">
+      <p>No proteins found in the database.</p>
+    </div>
+  <% } else { %>
+    <div class="proteins-grid">
+      <% proteins.forEach(protein => { %>
+        <div class="protein-card">
+          <div class="protein-header">
+            <h3><%= protein.name %></h3>
+            <span class="protein-type"><%= protein.proteinType || 'UNKNOWN' %></span>
+          </div>
+          
+          <div class="protein-info">
+            <p><strong>Total Files:</strong> <%= protein.files.length %></p>
+            <p><strong>Docking Results:</strong> <%= protein.dockingResults.length %> peptides</p>
+            <p><strong>Uploaded:</strong> <%= new Date(protein.uploadedAt).toLocaleDateString() %></p>
+          </div>
+
+          <% if (protein.analysis) { %>
+            <div class="protein-analysis">
+              <p><%= protein.analysis.substring(0, 150) %>...</p>
+            </div>
+          <% } %>
+
+          <div class="protein-actions">
+            <a href="/hladq-protein/<%= protein._id %>" class="btn btn-primary">View Details</a>
+            <% if (protein.mainProteinFile) { %>
+              <a href="/hladq-protein/<%= protein._id %>/download" class="btn btn-outline">Download PDB</a>
+            <% } %>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+</div>
+
+<!-- Script for Dropdown Navigation (like your old logic) -->
+<script>
+document.getElementById('proteinForm')?.addEventListener('submit', function (e) {
+  e.preventDefault();
+  const select = document.getElementById('proteinSelect');
+  if (select?.value) {
+    window.location.href = `/hladq-protein/${select.value}`;
+  }
+});
+</script>
+
+<style>
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.header-section {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.header-section h2 {
+  color: #2c3e50;
+  margin-bottom: 10px;
+}
+
+.debug-info {
+  text-align: center;
+  margin-bottom: 20px;
+  padding: 10px;
+  background: #e8f4f8;
+  border-radius: 4px;
+}
+
+.selection-section {
+  margin-bottom: 30px;
+}
+
+.card {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.card-body {
+  padding: 20px;
+}
+
+.card-title {
+  margin-bottom: 15px;
+  color: #34495e;
+}
+
+.form-row {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.form-select {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+}
+
+.btn {
+  display: inline-block;
+  padding: 10px 20px;
+  text-decoration: none;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  margin: 2px;
+}
+
+.btn-primary {
+  background-color: #2980b9;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #1c6690;
+}
+
+.btn-secondary {
+  background-color: #95a5a6;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: #7f8c8d;
+}
+
+.btn-outline {
+  background-color: white;
+  color: #2980b9;
+  border: 1px solid #2980b9;
+}
+
+.btn-outline:hover {
+  background-color: #2980b9;
+  color: white;
+}
+
+.proteins-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 20px;
+}
+
+.protein-card {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.protein-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.protein-header h3 {
+  margin: 0;
+  color: #34495e;
+}
+
+.protein-type {
+  background-color: #3498db;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+}
+
+.protein-info {
+  margin-bottom: 15px;
+}
+
+.protein-info p {
+  margin: 5px 0;
+  color: #666;
+}
+
+.protein-analysis {
+  background-color: #f8f9fa;
+  padding: 10px;
+  border-left: 3px solid #3498db;
+  margin-bottom: 15px;
+  border-radius: 4px;
+}
+
+.protein-analysis p {
+  margin: 0;
+  color: #555;
+  font-style: italic;
+}
+
+.protein-actions {
+  text-align: center;
+}
+
+.no-proteins {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+
+@media (max-width: 768px) {
+  .form-row {
+    flex-direction: column;
+  }
+  
+  .form-select {
+    width: 100%;
+  }
+}
+</style>

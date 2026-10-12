@@ -1,0 +1,12 @@
+! Candidate restraints derived from recurring contacts in 18 no-restraint HADDOCK models.
+! These are hypotheses for review, not experimentally validated active/passive residues.
+! Segment IDs confirmed from selected models: A=receptor, B=peptide.
+assign (segid A and resid 135)
+       (segid B and resid 10)
+       2.0 2.0 0.0
+assign (segid A and resid 165)
+       (segid B and resid 10)
+       2.0 2.0 0.0
+assign (segid A and resid 435)
+       (segid B and resid 15)
+       2.0 2.0 0.0

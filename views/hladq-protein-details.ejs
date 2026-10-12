@@ -1,0 +1,1055 @@
+<% const pdbFile = protein.files.find(f => f.storedName === protein.mainProteinFile) || protein.files.find(f => f.type === 'pdb'); %>
+<% const imageFiles = protein.files.filter(f => f.category === 'image'); %>
+<% const metricFiles = protein.files.filter(f => f.category === 'metric'); %>
+<% const simFiles = protein.files.filter(f => ['tpr', 'xtc'].includes(f.type)); %>
+
+<!-- Bootstrap -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+<!-- Font Awesome -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+<!-- Mol* Viewer CSS -->
+<link rel="stylesheet" type="text/css" href="https://www.ebi.ac.uk/pdbe/pdb-component-library/css/pdbe-molstar-3.1.0.css">
+<link rel="stylesheet" href="/css/hladq-protein-details.css">
+<div class="container mt-4">
+
+  <!-- Title & Download -->
+  <div class="header-section">
+    <h2><%= protein.name %> <small class="text-muted">– Protein Entry</small></h2>
+    <div class="header-actions">
+      <a href="/hladq-proteins" class="btn btn-secondary">← Back to Proteins</a>
+      <div class="dropdown">
+        <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+          ⬇ Download
+        </button>
+        <ul class="dropdown-menu">
+          <li><a class="dropdown-item" href="/hladq-protein/<%= protein._id %>/download-all-zip">📦 Download All Files (ZIP)</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <% if (protein.mainProteinFile) { %>
+            <li><a class="dropdown-item" href="/hladq-protein/<%= protein._id %>/download">📄 Main PDB File</a></li>
+            <li><hr class="dropdown-divider"></li>
+          <% } %>
+          <% protein.files.filter(f => 
+            !f.originalName.toLowerCase().includes("peptide") && 
+            !f.originalName.toLowerCase().includes("complex") &&
+            !f.originalName.toLowerCase().includes("docking") &&
+            !f.originalName.toLowerCase().includes("_out.pdb") &&
+            !f.originalName.toLowerCase().includes(".log") &&
+            f.storedName !== protein.mainProteinFile
+          ).forEach(file => { %>
+            <li>
+              <a class="dropdown-item" href="/uploads/<%= file.storedName %>" download>
+                📄 <%= file.originalName %>
+              </a>
+            </li>
+          <% }) %>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Advanced 3D Structure Viewer -->
+  <% if (pdbFile) { %>
+    <div class="viewers-section">
+      <div class="viewer-card full-width">
+        <div class="viewer-header">
+          <h4>🧬 3D Protein Structure with Membrane Context</h4>
+          <div class="viewer-controls">
+            <button class="expand-btn" onclick="expandViewer()">⤢ Expand</button>
+          </div>
+        </div>
+        <div id="proteinViewer" class="molstar-container main-viewer">
+          <div id="viewer-loader" class="viewer-loader">
+            <div class="spinner-border text-primary" role="status"></div>
+            <div class="mt-2">Loading advanced 3D structure...</div>
+          </div>
+        </div>
+        <div class="viewer-footer">
+          <div class="viewer-info">
+            <div class="info-item">
+              <span class="label">File:</span>
+              <span class="value"><%= pdbFile.originalName %></span>
+            </div>
+            <div class="info-item">
+              <span class="label">Size:</span>
+              <span class="value"><%= (pdbFile.size / 1024).toFixed(1) %> KB</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Type:</span>
+              <span class="value">PDB Structure</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Enhanced Analysis Section -->
+    <div class="analysis-section">
+      <div class="analysis-header">
+        <div class="analysis-title">
+          <div class="analysis-icon">
+            <i class="fas fa-microscope"></i>
+          </div>
+          <h4>Structure Analysis & Description</h4>
+        </div>
+        <div class="analysis-actions">
+          <button class="action-btn btn-outline-secondary" onclick="copyAnalysis()">
+            <i class="fas fa-copy"></i> Copy
+          </button>
+          <button class="action-btn btn-outline-primary" onclick="exportAnalysis()">
+            <i class="fas fa-download"></i> Export
+          </button>
+        </div>
+      </div>
+      
+      <div class="analysis-card">
+        <div class="analysis-content">
+          <div id="analysisText">
+            <%- (protein.analysis || "No analysis provided for this protein structure.").replace(/\n/g, '<br>') %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% } %>
+
+<!-- Docking Results Section -->
+<% if (protein.dockingResults && protein.dockingResults.length > 0) { %>
+  <div class="docking-section">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">🔬 View Docking Results</h5>
+        <p class="text-muted mb-3">Explore molecular docking simulations with different peptides</p>
+        <form id="dockingForm" class="docking-form">
+          <select id="peptideSelect" class="form-select" required>
+            <option value="" selected disabled>Select a peptide to view docking results</option>
+            <% protein.dockingResults.forEach(result => { %>
+              <option value="<%= result.peptideName %>">
+                <%= result.peptideName %>
+              </option>
+            <% }) %>
+          </select>
+          <button type="submit" class="btn btn-primary">View Docking Results →</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("dockingForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const peptide = document.getElementById("peptideSelect").value;
+      if (peptide) {
+        window.location.href = "/docking-results/<%= protein._id %>/" + encodeURIComponent(peptide);
+      }
+    });
+  </script>
+<% } %>
+
+<% if (protein.peptideLibrary && protein.peptideLibrary.length > 0) { %>
+  <div class="docking-section">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">🧬 HADDOCK Peptide Library</h5>
+        <p class="text-muted mb-3">
+          <%= protein.peptideLibrary.length %> peptide datasets are available for this HLA-DQ structure.
+          Each dataset includes four final conformations.
+        </p>
+        <div class="table-responsive">
+          <table class="table table-striped align-middle">
+            <thead>
+              <tr>
+                <th>Peptide</th>
+                <th>Conformations</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% protein.peptideLibrary.forEach(peptide => { %>
+                <tr>
+                  <td><strong><%= peptide.peptideName %></strong></td>
+                  <td>
+                    <a class="btn btn-sm btn-outline-primary me-1" href="/uploads/<%= peptide.conformations.ensemble %>" download>Ensemble</a>
+                    <a class="btn btn-sm btn-outline-primary me-1" href="/uploads/<%= peptide.conformations.helix %>" download>Helix</a>
+                    <a class="btn btn-sm btn-outline-primary me-1" href="/uploads/<%= peptide.conformations.ppii %>" download>PP II</a>
+                    <a class="btn btn-sm btn-outline-primary" href="/uploads/<%= peptide.conformations.sheet %>" download>Sheet</a>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+<% } %>
+
+<!-- Enhanced Analysis Visuals Gallery -->
+<% if (imageFiles.length) { %>
+  <div class="visuals-section">
+    <div class="visuals-header">
+      <div class="visuals-title">
+        <div class="visuals-icon">
+          <i class="fas fa-images"></i>
+        </div>
+        <h4>Analysis Visuals & Plots</h4>
+      </div>
+      <div class="view-toggle">
+        <button class="toggle-btn active" onclick="setGalleryView('grid')">
+          <i class="fas fa-th"></i> Grid
+        </button>
+        <button class="toggle-btn" onclick="setGalleryView('list')">
+          <i class="fas fa-list"></i> List
+        </button>
+      </div>
+    </div>
+
+    <!-- Gallery Controls -->
+    <div class="gallery-controls">
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-filter="all">All</button>
+        <button class="filter-tab" data-filter="rmsd">RMSD</button>
+        <button class="filter-tab" data-filter="area">Lipid Area</button>
+        <button class="filter-tab" data-filter="thickness">Thickness</button>
+        <button class="filter-tab" data-filter="other">Other</button>
+      </div>
+      <div class="gallery-info">
+        <span id="imageCount"><%= imageFiles.length %></span> visualizations
+      </div>
+    </div>
+
+    <div class="image-gallery" id="imageGallery">
+      <% imageFiles.forEach((file, index) => {
+        let label = file.originalName.toLowerCase().includes('rmsd') ? 'RMSD Analysis Plot' :
+                    file.originalName.toLowerCase().includes('area') ? 'Lipid Area Over Time' :
+                    file.originalName.toLowerCase().includes('thickness') ? 'Membrane Thickness Analysis' :
+                    file.originalName.replace(/_/g, ' ').replace(/\.[^/.]+$/, '');
+        
+        let category = file.originalName.toLowerCase().includes('rmsd') ? 'rmsd' :
+                      file.originalName.toLowerCase().includes('area') ? 'area' :
+                      file.originalName.toLowerCase().includes('thickness') ? 'thickness' : 'other';
+        
+        let icon = category === 'rmsd' ? '📈' : 
+                  category === 'area' ? '📐' : 
+                  category === 'thickness' ? '📏' : '📊';
+      %>
+        <div class="image-card" 
+             data-category="<%= category %>" 
+             data-index="<%= index %>"
+             onclick="showImageModal('<%= index %>')">
+          
+          <div class="image-category-badge">
+            <%= icon %> <%= category.toUpperCase() %>
+          </div>
+          
+          <div class="image-wrapper">
+            <img src="/uploads/<%= file.storedName %>" 
+                 alt="<%= label %>" 
+                 loading="lazy"
+                 data-src="/uploads/<%= file.storedName %>">
+            <div class="image-overlay">
+              <i class="icon fas fa-search-plus"></i>
+              <span class="overlay-text">Click to enlarge</span>
+            </div>
+          </div>
+          
+          <div class="image-caption">
+            <strong><%= label %></strong>
+            <div class="image-meta">
+              <span class="meta-item">
+                <i class="fas fa-file-image"></i>
+                <%= file.originalName.split('.').pop().toUpperCase() %>
+              </span>
+              <span class="meta-item">
+                <i class="fas fa-weight"></i>
+                <%= (file.size / 1024).toFixed(1) %> KB
+              </span>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+<% } %>
+
+<!-- Metric Data Tables -->
+<% if (metricFiles.length) { %>
+  <div class="metrics-section">
+    <h4>📊 Quantitative Analysis Data</h4>
+    <div class="metrics-grid">
+      <% metricFiles.forEach(file => {
+          const fname = file.originalName.toLowerCase();
+          let label = "Raw Metric Data";
+          let icon = "📊";
+
+          if (fname.includes("thickness") && fname.includes("center")) {
+            label = "Membrane Center Thickness";
+            icon = "📏";
+          } else if (fname.includes("thickness")) {
+            label = "Membrane Thickness Data";
+            icon = "📏";
+          } else if (fname.includes("area") && fname.includes("total")) {
+            label = "Total Lipid Area Analysis";
+            icon = "📐";
+          } else if (fname.includes("area") && fname.includes("average")) {
+            label = "Average Lipid Area";
+            icon = "📐";
+          } else if (fname.includes("area")) {
+            label = "Lipid Area per Residue";
+            icon = "📐";
+          } else if (fname.includes("rmsd")) {
+            label = "RMSD Trajectory Data";
+            icon = "📈";
+          } else if (fname.includes("center")) {
+            label = "Membrane Center Coordinates";
+            icon = "🎯";
+          }
+      %>
+        <div class="metric-card">
+          <div class="metric-header" data-bs-toggle="collapse" data-bs-target="#collapse_<%= file.storedName %>">
+            <div class="metric-title">
+              <span class="metric-icon"><%= icon %></span>
+              <div>
+                <h6><%= label %></h6>
+                <small><%= file.originalName %> • <%= (file.size / 1024).toFixed(1) %> KB</small>
+              </div>
+            </div>
+            <button class="collapse-btn">
+              <i class="chevron">▼</i>
+            </button>
+          </div>
+          <div id="collapse_<%= file.storedName %>" class="collapse">
+            <div class="metric-body">
+              <% if (file.parsedTable && file.parsedTable.length) {
+                const firstRow = file.parsedTable[0];
+                const isHeader = firstRow.every(cell => isNaN(cell) && isNaN(parseFloat(cell)));
+              %>
+                <div class="table-wrapper">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <% (isHeader ? firstRow : firstRow.map((_, i) => `Column ${i + 1}`)).forEach(col => { %>
+                          <th><%= col %></th>
+                        <% }) %>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% file.parsedTable.slice(isHeader ? 1 : 0).slice(0, 100).forEach(row => { %>
+                        <tr>
+                          <% row.forEach(cell => { %>
+                            <td><%= cell %></td>
+                          <% }) %>
+                        </tr>
+                      <% }) %>
+                      <% if (file.parsedTable.length > 100) { %>
+                        <tr class="table-truncated">
+                          <td colspan="<%= firstRow.length %>">
+                            ... and <%= file.parsedTable.length - 100 %> more rows
+                          </td>
+                        </tr>
+                      <% } %>
+                    </tbody>
+                  </table>
+                </div>
+              <% } else { %>
+                <pre class="raw-data"><%- file.content.substring(0, 2000) %><% if (file.content.length > 2000) { %>
+...
+[Content truncated - download file to view complete data]<% } %></pre>
+              <% } %>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+<% } %>
+
+<!-- Simulation Files -->
+<% if (simFiles.length) { %>
+  <div class="simulation-section">
+    <h4>🧪 Simulation Input & Output Files</h4>
+    <div class="simulation-grid">
+      <% simFiles.forEach(file => { %>
+        <div class="simulation-card">
+          <div class="sim-icon">
+            <% if (file.type === 'tpr') { %>
+              ⚙️
+            <% } else if (file.type === 'xtc') { %>
+              🎬
+            <% } else { %>
+              📄
+            <% } %>
+          </div>
+          <div class="sim-info">
+            <h6><%= file.originalName %></h6>
+            <div class="sim-meta">
+              <span class="sim-type"><%= file.type.toUpperCase() %></span>
+              <span class="sim-size"><%= (file.size / 1024).toFixed(1) %> KB</span>
+            </div>
+          </div>
+          <a href="/uploads/<%= file.storedName %>" class="btn btn-outline-primary btn-sm" download>
+            Download
+          </a>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+<% } %>
+
+</div>
+
+<!-- Professional Image Modal -->
+<div id="imageModal" class="image-modal" onclick="closeImageModal()">
+  <div class="image-modal-content" onclick="event.stopPropagation()">
+    <div class="modal-image-info" id="modalImageInfo"></div>
+    
+    <div class="modal-header-controls">
+      <button class="modal-control-btn" onclick="downloadCurrentImage()" title="Download Image">
+        <i class="fas fa-download"></i>
+      </button>
+      <button class="modal-control-btn image-close" onclick="closeImageModal()" title="Close">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="modal-image-container">
+      <button class="modal-nav prev" onclick="navigateImage(-1)" title="Previous Image">
+        <i class="fas fa-chevron-left"></i>
+      </button>
+      
+      <img id="modalImage" alt="Enlarged view" />
+      
+      <button class="modal-nav next" onclick="navigateImage(1)" title="Next Image">
+        <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+    
+    <div class="modal-footer" id="modalFooter">
+      <span id="imageCounter"></span>
+    </div>
+  </div>
+</div>
+
+<!-- Mol* Viewer JavaScript -->
+<script type="text/javascript" src="https://www.ebi.ac.uk/pdbe/pdb-component-library/js/pdbe-molstar-plugin-3.1.0.js"></script>
+
+<% if (pdbFile) { %>
+<script>
+// Global variables for Mol* viewer
+let molstarViewer = null;
+let modalViewer = null;
+
+// Enhanced Gallery Functionality
+let currentImageIndex = 0;
+const imageFiles = [
+  <% imageFiles.forEach((file, index) => { %>
+    {
+      src: '/uploads/<%= file.storedName %>',
+      name: '<%= file.originalName.replace(/_/g, ' ').replace(/\.[^/.]+$/, '') %>',
+      category: '<%= file.originalName.toLowerCase().includes("rmsd") ? "rmsd" : file.originalName.toLowerCase().includes("area") ? "area" : file.originalName.toLowerCase().includes("thickness") ? "thickness" : "other" %>',
+      size: '<%= (file.size / 1024).toFixed(1) %> KB'
+    }<%= index < imageFiles.length - 1 ? ',' : '' %>
+  <% }) %>
+];
+
+// Initialize Mol* viewer when page loads
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('🚀 Initializing advanced Mol* protein viewer...');
+  initializeMolstarViewer();
+  setupLazyLoading();
+  
+  // Add animation delays to cards
+  const cards = document.querySelectorAll('.image-card');
+  cards.forEach((card, index) => {
+    card.style.animationDelay = (index * 0.1) + 's';
+  });
+});
+
+// Gallery view toggle
+function setGalleryView(view) {
+  const gallery = document.getElementById('imageGallery');
+  const toggleBtns = document.querySelectorAll('.toggle-btn');
+  
+  toggleBtns.forEach(btn => btn.classList.remove('active'));
+  event.target.classList.add('active');
+  
+  if (view === 'list') {
+    gallery.style.gridTemplateColumns = '1fr';
+  } else {
+    gallery.style.gridTemplateColumns = 'repeat(auto-fit, minmax(350px, 1fr))';
+  }
+}
+
+// Filter functionality
+document.querySelectorAll('.filter-tab').forEach(tab => {
+  tab.addEventListener('click', function() {
+    const filter = this.dataset.filter;
+    
+    // Update active tab
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+    
+    // Filter images
+    filterImages(filter);
+  });
+});
+
+function filterImages(category) {
+  const gallery = document.getElementById('imageGallery');
+  const cards = gallery.querySelectorAll('.image-card');
+  
+  gallery.classList.add('filtering');
+  
+  setTimeout(() => {
+    let visibleCount = 0;
+    
+    cards.forEach(card => {
+      if (category === 'all' || card.dataset.category === category) {
+        card.classList.remove('hidden');
+        card.style.animationDelay = (visibleCount * 0.1) + 's';
+        visibleCount++;
+      } else {
+        card.classList.add('hidden');
+      }
+    });
+    
+    document.getElementById('imageCount').textContent = visibleCount;
+    gallery.classList.remove('filtering');
+  }, 150);
+}
+
+// Enhanced image modal with professional presentation
+function showImageModal(index) {
+  currentImageIndex = parseInt(index);
+  const modal = document.getElementById('imageModal');
+  const modalImage = document.getElementById('modalImage');
+  const modalInfo = document.getElementById('modalImageInfo');
+  const imageCounter = document.getElementById('imageCounter');
+  
+  const imageData = imageFiles[currentImageIndex];
+  
+  // Set image with loading state
+  modalImage.style.opacity = '0';
+  modalImage.onload = function() {
+    modalImage.style.opacity = '1';
+  };
+  modalImage.src = imageData.src;
+  modalImage.alt = imageData.name;
+  
+  // Update info
+  modalInfo.innerHTML = `
+    <div><strong>${imageData.name}</strong></div>
+    <div style="font-size: 0.8em; margin-top: 4px; opacity: 0.8;">${imageData.category.toUpperCase()} • ${imageData.size}</div>
+  `;
+  
+  // Update counter
+  imageCounter.textContent = `${currentImageIndex + 1} of ${imageFiles.length}`;
+  
+  // Update navigation button states
+  updateNavigationButtons();
+  
+  // Show modal
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  
+  // Add escape key listener
+  document.addEventListener('keydown', handleModalKeydown);
+}
+
+function closeImageModal() {
+  const modal = document.getElementById('imageModal');
+  modal.style.display = 'none';
+  document.body.style.overflow = 'auto';
+  
+  // Remove escape key listener
+  document.removeEventListener('keydown', handleModalKeydown);
+}
+
+function navigateImage(direction) {
+  const newIndex = currentImageIndex + direction;
+  
+  // Check bounds
+  if (newIndex < 0 || newIndex >= imageFiles.length) {
+    return;
+  }
+  
+  currentImageIndex = newIndex;
+  
+  const modalImage = document.getElementById('modalImage');
+  const modalInfo = document.getElementById('modalImageInfo');
+  const imageCounter = document.getElementById('imageCounter');
+  const imageData = imageFiles[currentImageIndex];
+  
+  // Smooth transition
+  modalImage.style.opacity = '0';
+  
+  setTimeout(() => {
+    modalImage.src = imageData.src;
+    modalImage.alt = imageData.name;
+    
+    modalInfo.innerHTML = `
+      <div><strong>${imageData.name}</strong></div>
+      <div style="font-size: 0.8em; margin-top: 4px; opacity: 0.8;">${imageData.category.toUpperCase()} • ${imageData.size}</div>
+    `;
+    
+    imageCounter.textContent = `${currentImageIndex + 1} of ${imageFiles.length}`;
+    
+    // Update navigation button states
+    updateNavigationButtons();
+    
+    modalImage.style.opacity = '1';
+  }, 150);
+}
+
+function updateNavigationButtons() {
+  const prevBtn = document.querySelector('.modal-nav.prev');
+  const nextBtn = document.querySelector('.modal-nav.next');
+  
+  // Disable/enable buttons based on position
+  prevBtn.disabled = currentImageIndex === 0;
+  nextBtn.disabled = currentImageIndex === imageFiles.length - 1;
+  
+  // Update opacity for visual feedback
+  prevBtn.style.opacity = currentImageIndex === 0 ? '0.3' : '1';
+  nextBtn.style.opacity = currentImageIndex === imageFiles.length - 1 ? '0.3' : '1';
+}
+
+function downloadCurrentImage() {
+  const imageData = imageFiles[currentImageIndex];
+  const link = document.createElement('a');
+  link.href = imageData.src;
+  link.download = imageData.name + '.' + imageData.src.split('.').pop();
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  
+  showNotification('Image download started!', 'success');
+}
+
+function handleModalKeydown(e) {
+  const modal = document.getElementById('imageModal');
+  if (modal.style.display === 'flex') {
+    switch(e.key) {
+      case 'Escape':
+        e.preventDefault();
+        closeImageModal();
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        if (currentImageIndex > 0) {
+          navigateImage(-1);
+        }
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        if (currentImageIndex < imageFiles.length - 1) {
+          navigateImage(1);
+        }
+        break;
+      case 'd':
+      case 'D':
+        e.preventDefault();
+        downloadCurrentImage();
+        break;
+    }
+  }
+}
+
+// Analysis functions
+function copyAnalysis() {
+  const analysisText = document.getElementById('analysisText').innerText;
+  
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(analysisText).then(() => {
+      showNotification('Analysis copied to clipboard!', 'success');
+    });
+  } else {
+    // Fallback for older browsers
+    const textArea = document.createElement('textarea');
+    textArea.value = analysisText;
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
+    showNotification('Analysis copied to clipboard!', 'success');
+  }
+}
+
+function exportAnalysis() {
+  const analysisText = document.getElementById('analysisText').innerText;
+  const proteinName = '<%= protein.name %>';
+  
+  const content = `Protein Analysis Report\n\nProtein: ${proteinName}\nGenerated: ${new Date().toLocaleDateString()}\n\n${analysisText}`;
+  
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${proteinName}_analysis.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+  
+  showNotification('Analysis exported successfully!', 'success');
+}
+
+function showNotification(message, type = 'info') {
+  // Create notification element
+  const notification = document.createElement('div');
+  notification.className = `notification notification-${type}`;
+  notification.innerHTML = `
+    <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'}"></i>
+    <span>${message}</span>
+  `;
+  
+  // Add styles
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: ${type === 'success' ? '#48bb78' : '#4299e1'};
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    z-index: 10000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    animation: slideInRight 0.3s ease;
+  `;
+  
+  document.body.appendChild(notification);
+  
+  // Remove after 3 seconds
+  setTimeout(() => {
+    notification.style.animation = 'slideOutRight 0.3s ease';
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 300);
+  }, 3000);
+}
+
+// Keyboard navigation for modal - UPDATED VERSION
+// (This replaces the old keyboard navigation code)
+
+// Lazy loading for images
+function setupLazyLoading() {
+  const images = document.querySelectorAll('img[data-src]');
+  
+  if ('IntersectionObserver' in window) {
+    const imageObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const img = entry.target;
+          img.src = img.dataset.src;
+          img.classList.remove('lazy');
+          imageObserver.unobserve(img);
+        }
+      });
+    });
+    
+    images.forEach(img => imageObserver.observe(img));
+  } else {
+    // Fallback for older browsers
+    images.forEach(img => {
+      img.src = img.dataset.src;
+    });
+  }
+}
+
+// Hide ONLY Mol* built-in expand/fullscreen buttons (keep other controls)
+function hideMolstarExpandButtons() {
+  try {
+    const molstarContainer = document.getElementById('proteinViewer');
+    if (!molstarContainer) return;
+    
+    // Target ONLY expand/fullscreen related buttons, not other controls
+    const expandButtonSelectors = [
+      '.msp-btn-expand',
+      '.msp-btn-fullscreen', 
+      'button[title*="fullscreen"]',
+      'button[title*="Fullscreen"]',
+      'button[title*="expand"]',
+      'button[title*="Expand"]'
+    ];
+    
+    expandButtonSelectors.forEach(selector => {
+      const buttons = molstarContainer.querySelectorAll(selector);
+      buttons.forEach(button => {
+        // Check if it's actually an expand/fullscreen button before hiding
+        const title = button.getAttribute('title') || '';
+        const textContent = button.textContent || '';
+        
+        if (title.toLowerCase().includes('expand') || 
+            title.toLowerCase().includes('fullscreen') ||
+            textContent.toLowerCase().includes('expand') ||
+            textContent.toLowerCase().includes('fullscreen')) {
+          
+          button.style.display = 'none !important';
+          button.style.visibility = 'hidden !important';
+          button.disabled = true;
+          button.onclick = null;
+          
+          console.log('🚫 Hidden Mol* expand button:', title || textContent);
+        }
+      });
+    });
+    
+    console.log('✅ Mol* expand buttons hidden (other controls preserved)');
+    
+  } catch (error) {
+    console.error('❌ Error hiding Mol* expand buttons:', error);
+  }
+}
+
+// Monitor for expand buttons only (preserve other controls)
+function setupExpandButtonMonitoring() {
+  const molstarContainer = document.getElementById('proteinViewer');
+  if (!molstarContainer) return;
+  
+  // Create a mutation observer to watch for new expand buttons only
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      mutation.addedNodes.forEach((node) => {
+        if (node.nodeType === 1) { // Element node
+          // Only check for expand/fullscreen buttons specifically
+          const expandButtons = node.querySelectorAll ? 
+            node.querySelectorAll('button[title*="expand"], button[title*="fullscreen"], .msp-btn-expand, .msp-btn-fullscreen') : [];
+          
+          if (expandButtons.length > 0) {
+            hideMolstarExpandButtons();
+          }
+        }
+      });
+    });
+  });
+  
+  // Start observing
+  observer.observe(molstarContainer, {
+    childList: true,
+    subtree: true
+  });
+  
+  console.log('👁️ Monitoring for Mol* expand buttons only...');
+}
+
+// Apply membrane-specific visualization
+function applyMembraneVisualization() {
+  if (!molstarViewer) return;
+  
+  try {
+    console.log('🧱 Applying membrane context visualization...');
+    
+    // Mol* automatically applies good default styling
+    // The plugin handles membrane proteins well with built-in presets
+    
+    console.log('✅ Membrane visualization applied');
+    
+  } catch (error) {
+    console.error('❌ Error applying membrane visualization:', error);
+  }
+}
+
+// Initialize the main Mol* viewer
+function initializeMolstarViewer() {
+  const loader = document.getElementById('viewer-loader');
+  
+  const options = {
+    customData: {
+      url: '/uploads/<%= pdbFile.storedName %>',
+      format: 'pdb',
+      binary: false
+    },
+    alphafoldView: false,
+    bgColor: { r: 255, g: 255, b: 255 },
+    hideControls: false,
+    hideCanvasControls: ['expand', 'fullscreen'],
+    sequencePanel: true,
+    pdbeUrl: '/uploads/<%= pdbFile.storedName %>',
+    loadMaps: false,
+    validationAnnotation: false,
+    domainAnnotation: true,
+    lowPrecisionCoords: true,
+    selectInteraction: true,
+    lighting: 'matte',
+    defaultPreset: 'default'
+  };
+
+  const viewerInstance = new PDBeMolstarPlugin();
+  
+  viewerInstance.render('proteinViewer', options).then(() => {
+    console.log('✅ Advanced Mol* viewer loaded successfully');
+    
+    // Hide loader
+    if (loader) {
+      loader.style.display = 'none';
+    }
+    
+    // Store viewer reference
+    molstarViewer = viewerInstance;
+    
+    // Apply initial membrane-aware visualization
+    setTimeout(() => {
+      applyMembraneVisualization();
+      
+      // Hide any remaining Mol* built-in fullscreen/expand buttons
+      hideMolstarExpandButtons();
+      
+      // Setup continuous monitoring for dynamically created buttons
+      setupExpandButtonMonitoring();
+    }, 2000);
+    
+  }).catch(error => {
+    console.error('❌ Error loading Mol* viewer:', error);
+    if (loader) {
+      loader.innerHTML = '<div class="error-message">❌ Failed to load 3D structure</div>';
+    }
+  });
+}
+
+// Enhanced expand viewer function - FIXED for sticky navbar
+function expandViewer() {
+  try {
+    console.log('🔍 Attempting to expand viewer...');
+    
+    const mainViewer = document.getElementById('proteinViewer');
+    const viewerCard = mainViewer.closest('.viewer-card');
+    const navbar = document.querySelector('.navbar');
+    const navbarHeight = navbar ? navbar.offsetHeight : 60;
+    
+    if (viewerCard.classList.contains('expanded')) {
+      // Collapse back to normal
+      viewerCard.classList.remove('expanded');
+      mainViewer.style.height = '500px';
+      document.body.style.overflow = 'auto'; // Re-enable scrolling
+      console.log('📱 Viewer collapsed to normal size');
+    } else {
+      // Expand the current viewer
+      viewerCard.classList.add('expanded');
+      
+      // Calculate proper height accounting for navbar
+      const availableHeight = window.innerHeight - navbarHeight - 160; // 160px for card padding/margins
+      mainViewer.style.height = `${availableHeight}px`;
+      
+      // Disable body scrolling when expanded
+      document.body.style.overflow = 'hidden';
+      
+      console.log('🖥️ Viewer expanded');
+    }
+    
+    // Resize the existing viewer instead of creating a new one
+    if (molstarViewer && molstarViewer.visual && molstarViewer.visual.resize) {
+      setTimeout(() => {
+        molstarViewer.visual.resize();
+      }, 300);
+    }
+    
+  } catch (error) {
+    console.error('❌ Error expanding viewer:', error);
+    alert('Unable to expand viewer. Please refresh the page and try again.');
+  }
+}
+
+// Enhanced close fullscreen function
+function closeFullscreen() {
+  try {
+    const viewerCard = document.querySelector('.viewer-card.expanded');
+    const mainViewer = document.getElementById('proteinViewer');
+    
+    if (viewerCard) {
+      viewerCard.classList.remove('expanded');
+      mainViewer.style.height = '500px';
+      document.body.style.overflow = 'auto'; // Re-enable scrolling
+      
+      // Resize the existing viewer
+      if (molstarViewer && molstarViewer.visual && molstarViewer.visual.resize) {
+        setTimeout(() => {
+          molstarViewer.visual.resize();
+        }, 300);
+      }
+    }
+    
+    console.log('✅ Viewer closed successfully');
+  } catch (error) {
+    console.error('❌ Error closing viewer:', error);
+  }
+}
+
+// Handle window resize for expanded viewer
+window.addEventListener('resize', () => {
+  const expandedViewer = document.querySelector('.viewer-card.expanded');
+  if (expandedViewer) {
+    const mainViewer = document.getElementById('proteinViewer');
+    const navbar = document.querySelector('.navbar');
+    const navbarHeight = navbar ? navbar.offsetHeight : 60;
+    const availableHeight = window.innerHeight - navbarHeight - 160;
+    mainViewer.style.height = `${availableHeight}px`;
+  }
+  
+  // Regular resize for Mol* viewer
+  if (molstarViewer && molstarViewer.visual && molstarViewer.visual.resize) {
+    molstarViewer.visual.resize();
+  }
+});
+
+// Close expanded viewer with Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    const expandedViewer = document.querySelector('.viewer-card.expanded');
+    if (expandedViewer) {
+      closeFullscreen();
+    }
+  }
+});
+
+// Handle window resize
+window.addEventListener('resize', () => {
+  if (molstarViewer && molstarViewer.visual && molstarViewer.visual.resize) {
+    molstarViewer.visual.resize();
+  }
+});
+
+// Add CSS animations for notifications
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes slideOutRight {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+  }
+  
+  .image-card img.lazy {
+    opacity: 0.5;
+    transition: opacity 0.3s;
+  }
+  
+  .image-card img {
+    opacity: 1;
+  }
+`;
+document.head.appendChild(style);
+</script>
+<% } %>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

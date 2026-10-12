@@ -1,0 +1,532 @@
+/* Custom Docking Form Styles */
+/* Author: HLA-DQ Protein Analysis Platform */
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.header-section {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.header-section h2 {
+  color: #2c3e50;
+  margin-bottom: 10px;
+  font-weight: 700;
+}
+
+.header-section p {
+  color: #6c757d;
+  font-size: 1.1em;
+  margin-bottom: 20px;
+}
+
+/* Form Section */
+.form-section .card {
+  border: none;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+.card-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-bottom: none;
+  padding: 20px 25px;
+}
+
+.card-header h4 {
+  margin: 0;
+  font-weight: 600;
+  font-size: 1.3em;
+}
+
+.card-body {
+  padding: 30px;
+}
+
+/* Form Groups */
+.form-group {
+  position: relative;
+  margin-bottom: 25px;
+}
+
+.form-label {
+  color: #34495e;
+  font-weight: 600;
+  margin-bottom: 10px;
+  font-size: 1.05em;
+}
+
+.form-label strong {
+  color: #2c3e50;
+}
+
+/* Input Method Selector */
+.input-method-selector {
+  display: flex;
+  gap: 25px;
+  padding: 20px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px;
+  border: 1px solid #dee2e6;
+}
+
+.form-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.form-check:hover {
+  transform: translateY(-1px);
+}
+
+.form-check-input {
+  cursor: pointer;
+  transform: scale(1.2);
+}
+
+.form-check-input:checked {
+  background-color: #667eea;
+  border-color: #667eea;
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.form-check-label {
+  cursor: pointer;
+  font-weight: 500;
+  color: #495057;
+  font-size: 1.05em;
+}
+
+/* Form Controls */
+.form-control, .form-select {
+  border: 2px solid #e9ecef;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  padding: 12px 15px;
+  font-size: 1em;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+  transform: translateY(-1px);
+}
+
+.form-control:hover, .form-select:hover {
+  border-color: #adb5bd;
+}
+
+/* Textarea specific */
+textarea.form-control {
+  resize: vertical;
+  min-height: 120px;
+  font-family: 'Courier New', monospace;
+  line-height: 1.5;
+}
+
+/* Form Text */
+.form-text {
+  color: #6c757d;
+  font-size: 0.9em;
+  margin-top: 8px;
+  line-height: 1.4;
+}
+
+/* Sequence Validation */
+.sequence-validation {
+  margin-top: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.sequence-validation.text-success {
+  color: #28a745 !important;
+}
+
+.sequence-validation.text-danger {
+  color: #dc3545 !important;
+}
+
+/* Docking Parameters Section */
+.docking-params {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 25px;
+  border-radius: 12px;
+  border: 1px solid #dee2e6;
+  margin-bottom: 25px;
+}
+
+.docking-params h5 {
+  color: #495057;
+  margin-bottom: 15px;
+  font-weight: 600;
+  font-size: 1.2em;
+}
+
+.alert-info {
+  background: linear-gradient(135deg, #e7f3ff 0%, #cce7ff 100%);
+  border: 1px solid #b8daff;
+  color: #0c5460;
+  border-radius: 8px;
+}
+
+.alert-info ul {
+  margin-bottom: 0;
+  padding-left: 20px;
+}
+
+.alert-info li {
+  margin-bottom: 5px;
+  line-height: 1.4;
+}
+
+/* Submit Button */
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  padding: 15px 40px;
+  font-weight: 600;
+  border-radius: 12px;
+  font-size: 1.1em;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-primary:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  border: none;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+/* Progress Modal */
+.modal-content {
+  border-radius: 15px;
+  border: none;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 15px 15px 0 0;
+  border-bottom: none;
+}
+
+.modal-body {
+  padding: 30px;
+}
+
+.spinner-border {
+  width: 3rem;
+  height: 3rem;
+}
+
+.progress {
+  height: 12px;
+  border-radius: 6px;
+  background-color: #e9ecef;
+  overflow: hidden;
+}
+
+.progress-bar {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  transition: width 0.3s ease;
+}
+
+/* Information Section */
+.info-section {
+  margin-top: 50px;
+}
+
+.info-card {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  height: 100%;
+  transition: transform 0.3s ease;
+}
+
+.info-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.info-card h5 {
+  color: #495057;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 3px solid #e9ecef;
+  font-weight: 600;
+  font-size: 1.2em;
+}
+
+.info-card ol, .info-card ul {
+  padding-left: 20px;
+}
+
+.info-card li {
+  margin-bottom: 10px;
+  line-height: 1.6;
+  color: #495057;
+}
+
+.info-card strong {
+  color: #2c3e50;
+}
+
+/* Cancel Button in Modal */
+.btn-outline-secondary {
+  border: 2px solid #6c757d;
+  color: #6c757d;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.btn-outline-secondary:hover {
+  background-color: #6c757d;
+  color: white;
+  transform: translateY(-1px);
+}
+
+/* Loading States */
+.loading-state {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.form-submitted .form-control,
+.form-submitted .form-select,
+.form-submitted .btn {
+  opacity: 0.7;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    padding: 15px;
+  }
+  
+  .card-body {
+    padding: 20px;
+  }
+  
+  .input-method-selector {
+    flex-direction: column;
+    gap: 15px;
+    padding: 15px;
+  }
+  
+  .info-section .row {
+    gap: 20px;
+  }
+  
+  .btn-primary {
+    padding: 12px 30px;
+    font-size: 1em;
+  }
+  
+  .docking-params {
+    padding: 20px;
+  }
+  
+  .header-section h2 {
+    font-size: 1.8em;
+  }
+}
+
+@media (max-width: 576px) {
+  .form-group {
+    margin-bottom: 20px;
+  }
+  
+  .input-method-selector {
+    padding: 12px;
+  }
+  
+  .btn-primary {
+    width: 100%;
+    padding: 15px;
+  }
+  
+  .modal-body {
+    padding: 20px;
+  }
+  
+  .info-card {
+    padding: 20px;
+  }
+}
+
+/* Animation for form validation */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.form-control.is-invalid {
+  animation: shake 0.5s ease-in-out;
+}
+
+/* Success animation */
+@keyframes pulse-success {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+.form-control.is-valid {
+  animation: pulse-success 0.3s ease-in-out;
+  border-color: #28a745;
+}
+
+/* Focus states */
+.form-control:focus-visible,
+.form-select:focus-visible {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+/* Accessibility improvements */
+.form-check-input:focus {
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.btn:focus {
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .form-control, .form-select {
+    border-width: 3px;
+  }
+  
+  .btn-primary {
+    border: 2px solid #000;
+  }
+  
+  .card {
+    border: 2px solid #000;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .form-control,
+  .form-select,
+  .btn-primary,
+  .info-card,
+  .form-check {
+    transition: none;
+  }
+  
+  .progress-bar {
+    transition: none;
+  }
+  
+  @keyframes shake,
+  @keyframes pulse-success {
+    animation: none;
+  }
+}
+
+/* Print styles */
+@media print {
+  .btn,
+  .modal,
+  .progress,
+  .spinner-border {
+    display: none !important;
+  }
+  
+  .form-control,
+  .form-select {
+    border: 1px solid #000 !important;
+    background: white !important;
+  }
+  
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #000 !important;
+  }
+}
+
+.steps-container .step-item {
+  display: flex;
+  align-items: flex-start;
+}
+
+.step-number {
+  background: #007bff;
+  color: white;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  margin-right: 15px;
+  flex-shrink: 0;
+}
+
+.step-content {
+  flex: 1;
+}
+
+.step-content h6 {
+  margin-bottom: 5px;
+  color: #333;
+}
+
+.step-content p {
+  margin: 0;
+  color: #666;
+}
+
+.alert-info h4 {
+  color: #0c5460;
+}
+
+.alert-warning {
+  border-left: 4px solid #ffc107;
+}
+
+.alert-info {
+  border-left: 4px solid #17a2b8;
+}

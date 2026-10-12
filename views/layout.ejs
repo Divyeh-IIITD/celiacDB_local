@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Celiac DB</title>
+  <link rel="icon" href="/logo.jpeg" />
+
+  <!-- CRITICAL: Enhanced Navbar & Footer styles -->
+  <style>
+    /* BULLETPROOF ENHANCED NAVBAR - Professional Design */
+
+    * {
+      box-sizing: border-box;
+    }
+
+    /* Force reset any existing navbar/header styles that might conflict */
+    header,
+    nav,
+    .navbar,
+    .nav-container,
+    .nav-brand,
+    .nav-links,
+    .nav-link {
+      all: unset !important;
+    }
+
+    body {
+      margin: 0 !important;
+      padding-top: 70px !important;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      font-display: swap;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%) !important;
+      min-height: 100vh;
+    }
+
+    /* MAXIMUM SPECIFICITY ENHANCED NAVBAR */
+    html body header nav.navbar {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      width: 100% !important;
+      height: 70px !important;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%) !important;
+      backdrop-filter: blur(25px) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(25px) saturate(180%) !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+      box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3) !important;
+      z-index: 99999 !important;
+      transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+      box-sizing: border-box !important;
+      display: block !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif !important;
+    }
+
+    html body header nav.navbar.scrolled {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%) !important;
+      box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4) !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.3) !important;
+    }
+
+    html body header nav.navbar .nav-container {
+      max-width: 1400px !important;
+      margin: 0 auto !important;
+      height: 100% !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      padding: 0 32px !important;
+      box-sizing: border-box !important;
+    }
+
+    html body header nav.navbar .nav-container .nav-brand {
+      display: flex !important;
+      align-items: center !important;
+      gap: 16px !important;
+      text-decoration: none !important;
+      transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+      color: inherit !important;
+      cursor: pointer !important;
+    }
+
+    html body header nav.navbar .nav-container .nav-brand:hover {
+      transform: translateY(-2px) scale(1.02) !important;
+    }
+
+    html body header nav.navbar .nav-container .nav-brand .nav-logo {
+      width: 42px !important;
+      height: 42px !important;
+      border-radius: 12px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4) !important;
+      position: relative !important;
+      overflow: hidden !important;
+      background: rgba(255, 255, 255, 0.1) !important;
+      backdrop-filter: blur(10px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    }
+
+    html body header nav.navbar .nav-container .nav-brand .nav-logo img {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+      border-radius: 10px !important;
+    }
+
+    html body header nav.navbar .nav-container .nav-brand .nav-logo::before {
+      content: '' !important;
+      position: absolute !important;
+      top: 0 !important;
+      left: -100% !important;
+      width: 100% !important;
+      height: 100% !important;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent) !important;
+      transition: left 0.6s !important;
+    }
+
+    html body header nav.navbar .nav-container .nav-brand:hover .nav-logo::before {
+      left: 100% !important;
+    }
+
+    html body header nav.navbar .nav-container .nav-brand div .nav-title {
+      font-size: 20px !important;
+      font-weight: 700 !important;
+      color: white !important;
+      margin: 0 !important;
+      letter-spacing: -0.5px !important;
+      line-height: 1.2 !important;
+    }
+
+    html body header nav.navbar .nav-container .nav-brand div .nav-subtitle {
+      font-size: 12px !important;
+      color: rgba(255, 255, 255, 0.9) !important;
+      font-weight: 500 !important;
+      margin: 0 !important;
+      line-height: 1 !important;
+    }
+
+    html body header nav.navbar .nav-container .nav-links {
+      display: flex !important;
+      align-items: center !important;
+      gap: 12px !important;
+      list-style: none !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+
+    html body header nav.navbar .nav-container .nav-links .nav-link {
+      padding: 10px 18px !important;
+      border-radius: 25px !important;
+      text-decoration: none !important;
+      color: white !important;
+      font-weight: 600 !important;
+      font-size: 14px !important;
+      transition: all 0.3s ease !important;
+      position: relative !important;
+      overflow: hidden !important;
+      display: inline-block !important;
+      line-height: 1.4 !important;
+      cursor: pointer !important;
+      background: rgba(255, 255, 255, 0.15) !important;
+      border: 1px solid rgba(255, 255, 255, 0.3) !important;
+      backdrop-filter: blur(10px) !important;
+    }
+
+    html body header nav.navbar .nav-container .nav-links .nav-link::before {
+      content: '' !important;
+      position: absolute !important;
+      top: 0 !important;
+      left: -100% !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      background: rgba(255, 255, 255, 0.25) !important;
+      transition: left 0.3s ease !important;
+      border-radius: 25px !important;
+      z-index: -1 !important;
+    }
+
+    html body header nav.navbar .nav-container .nav-links .nav-link:hover::before {
+      left: 0 !important;
+    }
+
+    html body header nav.navbar .nav-container .nav-links .nav-link:hover {
+      color: #667eea !important;
+      transform: translateY(-2px) !important;
+      box-shadow: 0 8px 25px rgba(255, 255, 255, 0.2) !important;
+      background: rgba(255, 255, 255, 0.9) !important;
+      border-color: rgba(255, 255, 255, 0.6) !important;
+    }
+
+    html body header nav.navbar .nav-container .nav-links .nav-link.active {
+      background: rgba(255, 255, 255, 0.9) !important;
+      color: #667eea !important;
+      box-shadow: 0 8px 25px rgba(255, 255, 255, 0.3) !important;
+      border-color: rgba(255, 255, 255, 0.6) !important;
+      font-weight: 700 !important;
+    }
+
+    html body header nav.navbar .nav-container .nav-links .nav-link.active::before {
+      display: none !important;
+    }
+
+    /* Professional Dropdown for Custom Docking */
+    .nav-dropdown {
+      position: relative !important;
+      display: inline-block !important;
+    }
+
+    .nav-dropdown-menu {
+      display: none;
+      position: absolute !important;
+      top: 100% !important;
+      right: 0 !important;
+      min-width: 230px !important;
+      background: rgba(255, 255, 255, 0.98) !important;
+      backdrop-filter: blur(25px) !important;
+      -webkit-backdrop-filter: blur(25px) !important;
+      border-radius: 14px !important;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22) !important;
+      padding: 8px !important;
+      margin-top: 8px !important;
+      z-index: 100000 !important;
+      border: 1px solid rgba(255, 255, 255, 0.7) !important;
+    }
+
+    .nav-dropdown:hover .nav-dropdown-menu,
+    .nav-dropdown:focus-within .nav-dropdown-menu {
+      display: block !important;
+      animation: navDropdownFade 0.25s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    }
+
+    @keyframes navDropdownFade {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .nav-dropdown-item {
+      display: flex !important;
+      align-items: center !important;
+      padding: 10px 16px !important;
+      color: #2d3748 !important;
+      text-decoration: none !important;
+      font-size: 13.5px !important;
+      font-weight: 600 !important;
+      border-radius: 10px !important;
+      transition: all 0.2s ease !important;
+      white-space: nowrap !important;
+    }
+
+    .nav-dropdown-item:hover {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.15), rgba(118, 75, 162, 0.15)) !important;
+      color: #667eea !important;
+      transform: translateX(4px) !important;
+    }
+
+    html body header nav.navbar .nav-container .nav-toggle {
+      display: none !important;
+      flex-direction: column !important;
+      gap: 5px !important;
+      background: rgba(255, 255, 255, 0.1) !important;
+      border: 1px solid rgba(255, 255, 255, 0.2) !important;
+      cursor: pointer !important;
+      padding: 12px !important;
+      border-radius: 10px !important;
+      transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+      backdrop-filter: blur(10px) !important;
+    }
+
+    html body header nav.navbar .nav-container .nav-toggle:hover {
+      background: rgba(255, 255, 255, 0.2) !important;
+      transform: scale(1.05) !important;
+    }
+
+    html body header nav.navbar .nav-container .nav-toggle span {
+      width: 24px !important;
+      height: 3px !important;
+      background: linear-gradient(135deg, #667eea, #764ba2) !important;
+      border-radius: 2px !important;
+      transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+      display: block !important;
+    }
+
+    html body header nav.navbar .nav-container .nav-toggle.active span:nth-child(1) {
+      transform: rotate(45deg) translate(6px, 6px) !important;
+    }
+
+    html body header nav.navbar .nav-container .nav-toggle.active span:nth-child(2) {
+      opacity: 0 !important;
+      transform: scale(0) !important;
+    }
+
+    html body header nav.navbar .nav-container .nav-toggle.active span:nth-child(3) {
+      transform: rotate(-45deg) translate(8px, -8px) !important;
+    }
+
+    /* Override any Bootstrap or other framework navbar */
+    .navbar-brand,
+    .navbar-nav,
+    .navbar-toggler,
+    .navbar-collapse {
+      display: none !important;
+    }
+
+    /* Ensure our custom navbar is always visible */
+    header[role="banner"] {
+      display: block !important;
+    }
+
+    /* Mobile Navigation */
+    @media (max-width: 768px) {
+      html body header nav.navbar .nav-container {
+        padding: 0 20px !important;
+      }
+
+      html body header nav.navbar .nav-container .nav-brand div .nav-title {
+        font-size: 18px !important;
+      }
+
+      html body header nav.navbar .nav-container .nav-brand div .nav-subtitle {
+        display: none !important;
+      }
+
+      html body header nav.navbar .nav-container .nav-toggle {
+        display: flex !important;
+      }
+
+      html body header nav.navbar .nav-container .nav-links {
+        position: absolute !important;
+        top: 100% !important;
+        left: 0 !important;
+        right: 0 !important;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%) !important;
+        backdrop-filter: blur(30px) saturate(200%) !important;
+        -webkit-backdrop-filter: blur(30px) saturate(200%) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+        box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3) !important;
+        flex-direction: column !important;
+        gap: 0 !important;
+        padding: 24px !important;
+        transform: translateY(-20px) !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+      }
+
+      html body header nav.navbar .nav-container .nav-links.active {
+        transform: translateY(0) !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+      }
+
+      html body header nav.navbar .nav-container .nav-links .nav-link {
+        width: 100% !important;
+        text-align: center !important;
+        padding: 16px 24px !important;
+        margin: 4px 0 !important;
+        border-radius: 12px !important;
+        color: white !important;
+        background: rgba(255, 255, 255, 0.15) !important;
+        border: 1px solid rgba(255, 255, 255, 0.3) !important;
+      }
+
+      html body header nav.navbar .nav-container .nav-links .nav-link:hover {
+        color: #667eea !important;
+        background: rgba(255, 255, 255, 0.9) !important;
+        border-color: rgba(255, 255, 255, 0.6) !important;
+      }
+
+      html body header nav.navbar .nav-container .nav-links .nav-link.active {
+        background: rgba(255, 255, 255, 0.9) !important;
+        color: #667eea !important;
+        border-color: rgba(255, 255, 255, 0.6) !important;
+        font-weight: 700 !important;
+      }
+
+      .nav-dropdown {
+        width: 100% !important;
+      }
+
+      .nav-dropdown-menu {
+        position: static !important;
+        box-shadow: none !important;
+        background: rgba(255, 255, 255, 0.12) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        display: block !important;
+        padding: 6px !important;
+        margin-top: 6px !important;
+        width: 100% !important;
+      }
+
+      .nav-dropdown-item {
+        color: white !important;
+        padding: 10px 14px !important;
+      }
+
+      .nav-dropdown-item:hover {
+        background: rgba(255, 255, 255, 0.25) !important;
+        color: white !important;
+      }
+    }
+
+    /* Ensure main content doesn't overlap navbar on ANY page */
+    main,
+    #main-content,
+    .container,
+    .main-content {
+      margin-top: 0 !important;
+      padding-top: 20px !important;
+    }
+
+    /* Force override for pages that might have different body styles */
+    body.protein-details,
+    body.docking-results,
+    body[class*="page-"] {
+      padding-top: 70px !important;
+    }
+
+    /* ENHANCED PROFESSIONAL FOOTER */
+    .footer {
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #667eea 100%) !important;
+      color: white !important;
+      padding: 60px 0 20px 0 !important;
+      margin-top: 80px !important;
+      position: relative !important;
+      overflow: hidden !important;
+    }
+
+    .footer::before {
+      content: '' !important;
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 100" fill="rgba(255,255,255,0.03)"><polygon points="0,0 1000,0 1000,100 0,100"></polygon><circle cx="200" cy="50" r="40"/><circle cx="800" cy="30" r="30"/><circle cx="600" cy="70" r="25"/></svg>') !important;
+      opacity: 0.1 !important;
+    }
+
+    .footer-content {
+      max-width: 1400px !important;
+      margin: 0 auto !important;
+      padding: 0 32px !important;
+      position: relative !important;
+      z-index: 2 !important;
+    }
+
+    .footer-main {
+      display: block !important;
+      margin-bottom: 40px !important;
+    }
+
+    .footer-brand {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 20px !important;
+    }
+
+    .footer-brand .brand-info {
+      display: flex !important;
+      align-items: center !important;
+      gap: 16px !important;
+      margin-bottom: 16px !important;
+    }
+
+    .footer-brand .brand-logo {
+      width: 48px !important;
+      height: 48px !important;
+      background: rgba(255, 255, 255, 0.1) !important;
+      border-radius: 12px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      backdrop-filter: blur(10px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.2) !important;
+      overflow: hidden !important;
+    }
+
+    .footer-brand .brand-logo img {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+      border-radius: 10px !important;
+    }
+
+    .footer-brand .brand-text h3 {
+      font-size: 24px !important;
+      font-weight: 700 !important;
+      margin: 0 0 4px 0 !important;
+      background: linear-gradient(135deg, #ffffff, #e2e8f0) !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      background-clip: text !important;
+    }
+
+    .footer-brand .brand-text p {
+      font-size: 14px !important;
+      margin: 0 !important;
+      opacity: 0.8 !important;
+      line-height: 1.4 !important;
+    }
+
+    .footer-brand .brand-description {
+      font-size: 16px !important;
+      line-height: 1.6 !important;
+      opacity: 0.9 !important;
+      margin: 0 !important;
+    }
+
+    .footer-social {
+      display: flex !important;
+      gap: 16px !important;
+      margin-top: 16px !important;
+    }
+
+    .footer-social a {
+      width: 44px !important;
+      height: 44px !important;
+      background: rgba(255, 255, 255, 0.1) !important;
+      border-radius: 10px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      color: white !important;
+      text-decoration: none !important;
+      transition: all 0.3s ease !important;
+      backdrop-filter: blur(10px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+
+    .footer-social a:hover {
+      background: rgba(255, 255, 255, 0.2) !important;
+      transform: translateY(-2px) !important;
+      border-color: rgba(255, 255, 255, 0.3) !important;
+    }
+
+    .footer-column h4 {
+      font-size: 18px !important;
+      font-weight: 600 !important;
+      margin: 0 0 24px 0 !important;
+      color: white !important;
+    }
+
+    .footer-column ul {
+      list-style: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    .footer-column ul li {
+      margin-bottom: 12px !important;
+    }
+
+    .footer-column ul li a {
+      color: rgba(255, 255, 255, 0.8) !important;
+      text-decoration: none !important;
+      font-size: 14px !important;
+      transition: all 0.3s ease !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+    }
+
+    .footer-column ul li a:hover {
+      color: white !important;
+      transform: translateX(4px) !important;
+    }
+
+    .footer-column ul li a i {
+      font-size: 12px !important;
+      opacity: 0.6 !important;
+    }
+
+    .footer-bottom {
+      border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+      padding-top: 32px !important;
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      flex-wrap: wrap !important;
+      gap: 16px !important;
+    }
+
+    .footer-bottom p {
+      margin: 0 !important;
+      font-size: 14px !important;
+      opacity: 0.7 !important;
+    }
+
+    .footer-bottom .footer-links {
+      display: flex !important;
+      gap: 24px !important;
+    }
+
+    .footer-bottom .footer-links a {
+      color: rgba(255, 255, 255, 0.8) !important;
+      text-decoration: none !important;
+      font-size: 14px !important;
+      transition: color 0.3s ease !important;
+    }
+
+    .footer-bottom .footer-links a:hover {
+      color: white !important;
+    }
+
+    @media (max-width: 1024px) {
+      .footer-main {
+        display: block !important;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .footer {
+        padding: 40px 0 20px 0 !important;
+      }
+
+      .footer-content {
+        padding: 0 20px !important;
+      }
+
+      .footer-main {
+        display: block !important;
+        text-align: center !important;
+      }
+
+      .footer-bottom {
+        flex-direction: column !important;
+        text-align: center !important;
+      }
+
+      .footer-bottom .footer-links {
+        gap: 20px !important;
+      }
+    }
+
+    /* Loading and error states */
+    .page-loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 99999;
+      font-size: 1.2rem;
+      color: white;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .page-loading.hidden {
+      display: none;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top: 4px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .error-boundary {
+      padding: 20px;
+      margin: 20px;
+      border: 2px solid #dc3545;
+      border-radius: 12px;
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .error-boundary h3 {
+      margin-top: 0;
+      color: #721c24;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* Glassmorphism effects */
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.1) !important;
+      backdrop-filter: blur(10px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.2) !important;
+      border-radius: 12px !important;
+    }
+
+    /* Smooth animations */
+    .fade-in {
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Your other CSS files load AFTER the inline navbar styles -->
+  <link rel="stylesheet" href="/style.css">
+
+  <!-- Mol* Viewer Dependencies (only load when needed) -->
+  <% if (typeof includeMolstar !=='undefined' && includeMolstar) { %>
+    <link rel="stylesheet" type="text/css"
+      href="https://www.ebi.ac.uk/pdbe/pdb-component-library/css/pdbe-molstar-3.1.0.css">
+    <!-- Polyfill removed - modern browsers support ES6+ natively -->
+    <% } %>
+
+      <!-- Performance optimizations -->
+      <link rel="preconnect" href="https://www.ebi.ac.uk">
+      <link rel="dns-prefetch" href="https://www.ebi.ac.uk">
+
+      <!-- Meta tags -->
+      <meta name="description"
+        content="HLA-DQ Protein Analysis Platform with advanced 3D visualization and docking analysis">
+      <meta name="keywords" content="HLA-DQ, protein, docking, molecular visualization, bioinformatics">
+      <meta name="author" content="HLA-DQ Research Platform">
+      <link rel="icon" type="image/x-icon" href="/favicon.ico">
+      <meta property="og:title" content="HLA-DQ Protein Analysis Platform">
+      <meta property="og:description" content="Advanced protein analysis with 3D visualization">
+      <meta property="og:type" content="website">
+      <link rel="prefetch" href="https://3Dmol.org/build/3Dmol-min.js">
+</head>
+
+<body>
+  <!-- Enhanced Page loading indicator -->
+  <div id="pageLoading" class="page-loading">
+    <div class="spinner"></div>
+    <span>Loading Celiac DB...</span>
+    <small style="opacity: 0.8; font-size: 0.9rem;">Initializing molecular visualization engine</small>
+  </div>
+
+  <!-- Skip to main content for accessibility -->
+  <a href="#main-content" class="sr-only">Skip to main content</a>
+
+  <!-- ENHANCED FIXED STICKY NAVBAR -->
+  <header role="banner">
+    <nav class="navbar" id="navbar">
+      <div class="nav-container">
+        <a href="/" class="nav-brand">
+          <div class="nav-logo">
+            <img src="/logo.jpeg" alt="Celiac DB Logo" loading="lazy">
+          </div>
+          <div>
+            <div class="nav-title">Celiac DB</div>
+            <div class="nav-subtitle">HLA-DQ Analysis Platform</div>
+          </div>
+        </a>
+
+        <div class="nav-links" id="navLinks">
+          <a href="/" class="nav-link" data-page="home">
+            <i class="fas fa-home" style="margin-right: 6px;"></i>Home
+          </a>
+          <a href="/hladq-proteins" class="nav-link" data-page="proteins">
+            <i class="fas fa-microscope" style="margin-right: 6px;"></i>Proteins
+          </a>
+          <a href="/docking-analysis" class="nav-link" data-page="docking">
+            <i class="fas fa-database" style="margin-right: 6px;"></i>Pre-computed Docking
+          </a>
+          <div class="nav-dropdown" id="customDockingDropdown">
+            <a href="/custom-docking" class="nav-link nav-dropdown-toggle" data-page="custom-docking">
+              <i class="fas fa-rocket" style="margin-right: 6px;"></i>Custom Docking <i class="fas fa-chevron-down ms-1" style="font-size: 0.72rem; opacity: 0.85;"></i>
+            </a>
+            <div class="nav-dropdown-menu">
+              <a href="/custom-docking" class="nav-dropdown-item">
+                <i class="fas fa-bullseye me-2 text-primary"></i> Direct PDB Docking
+              </a>
+              <a href="/custom-docking/peptide-prep" class="nav-dropdown-item">
+                <i class="fas fa-dna me-2 text-primary"></i> Peptide Prep (PyMOL)
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Main content -->
+  <main id="main-content" role="main" class="fade-in">
+    <%- body %>
+  </main>
+
+  <!-- Enhanced Professional Footer -->
+  <footer role="contentinfo" class="footer">
+    <div class="footer-content">
+      <div class="footer-main">
+        <!-- Brand Section -->
+        <div class="footer-brand">
+          <div class="brand-info">
+            <div class="brand-logo">
+              <img src="/logo.jpeg" alt="Celiac DB Logo" loading="lazy">
+            </div>
+            <div class="brand-text">
+              <h3>Celiac DB - HLA-DQ Analysis Platform</h3>
+              <p>Advanced Protein Research</p>
+            </div>
+          </div>
+          <p class="brand-description">
+            Cutting-edge molecular docking and analysis tools for HLA-DQ protein research.
+            Empowering scientists with advanced 3D visualization and computational biology solutions.
+          </p>
+        </div>
+      </div>
+
+      <!-- Footer Bottom -->
+      <div class="footer-bottom">
+        <p>&copy; 2025 Celiac DB. All rights reserved.</p>
+        <div class="footer-links">
+          <a href="mailto:arjun@iiitd.ac.in">
+            <i class="fas fa-envelope" style="margin-right: 6px;"></i>
+            arjun@iiitd.ac.in
+          </a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Error boundary -->
+  <div id="errorBoundary" class="error-boundary" style="display: none;">
+    <h3>🚨 Application Error</h3>
+    <p>Something went wrong while loading the molecular viewer. Please refresh the page or try again later.</p>
+    <button onclick="location.reload()" class="btn btn-primary">Refresh Page</button>
+  </div>
+
+  <!-- CRITICAL: Enhanced Navbar JavaScript -->
+  <script>
+    // ENSURE NAVBAR IS ALWAYS STICKY WITH ENHANCED ANIMATIONS
+    document.addEventListener('DOMContentLoaded', function () {
+      const navbar = document.getElementById('navbar');
+      if (navbar) {
+        // Force sticky positioning
+        navbar.style.position = 'fixed';
+        navbar.style.top = '0';
+        navbar.style.zIndex = '99999';
+
+        // Ensure body has proper padding
+        document.body.style.paddingTop = '70px';
+      }
+
+      // Enhanced active page highlighting
+      const currentPath = window.location.pathname;
+      const navLinks = document.querySelectorAll('.nav-link');
+
+      navLinks.forEach(link => {
+        link.classList.remove('active');
+        const href = link.getAttribute('href');
+
+        if (currentPath === href ||
+          (href !== '/' && currentPath.startsWith(href))) {
+          link.classList.add('active');
+        }
+      });
+
+      // Enhanced loading animation
+      setTimeout(() => {
+        const loading = document.getElementById('pageLoading');
+        if (loading) {
+          loading.style.opacity = '0';
+          loading.style.transform = 'scale(0.95)';
+          setTimeout(() => {
+            loading.classList.add('hidden');
+          }, 300);
+        }
+      }, 800);
+
+      // Add fade-in animation to main content
+      const mainContent = document.getElementById('main-content');
+      if (mainContent) {
+        mainContent.classList.add('fade-in');
+      }
+    });
+
+    // Enhanced navbar scroll effect with performance optimization
+    let ticking = false;
+    function updateNavbar() {
+      const navbar = document.getElementById('navbar');
+      if (navbar) {
+        if (window.scrollY > 30) {
+          navbar.classList.add('scrolled');
+        } else {
+          navbar.classList.remove('scrolled');
+        }
+      }
+      ticking = false;
+    }
+
+    window.addEventListener('scroll', function () {
+      if (!ticking) {
+        requestAnimationFrame(updateNavbar);
+        ticking = true;
+      }
+    });
+
+    // Enhanced mobile navigation toggle with smooth animations
+    const navToggle = document.getElementById('navToggle');
+    const navLinks = document.getElementById('navLinks');
+
+    if (navToggle && navLinks) {
+      navToggle.addEventListener('click', function (e) {
+        e.preventDefault();
+        navLinks.classList.toggle('active');
+        navToggle.classList.toggle('active');
+
+        // Add haptic feedback on mobile devices
+        if (navigator.vibrate) {
+          navigator.vibrate(50);
+        }
+      });
+
+      // Enhanced mobile menu close functionality
+      document.addEventListener('click', function (e) {
+        const navbar = document.querySelector('.navbar');
+
+        if (navLinks.classList.contains('active') &&
+          navbar && !navbar.contains(e.target)) {
+          navLinks.classList.remove('active');
+          navToggle.classList.remove('active');
+        }
+      });
+
+      // Close mobile menu on escape key
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && navLinks.classList.contains('active')) {
+          navLinks.classList.remove('active');
+          navToggle.classList.remove('active');
+        }
+      });
+
+      // Close mobile menu when clicking nav links
+      document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', function () {
+          if (window.innerWidth <= 768) {
+            navLinks.classList.remove('active');
+            navToggle.classList.remove('active');
+          }
+        });
+      });
+    }
+
+    // Enhanced global error handlers
+    window.addEventListener('error', function (e) {
+      console.error('Global error:', e.error);
+      const errorBoundary = document.getElementById('errorBoundary');
+      if (errorBoundary) {
+        errorBoundary.style.display = 'block';
+        errorBoundary.querySelector('p').textContent = e.error.message;
+      }
+    });
+
+    window.addEventListener('unhandledrejection', function (e) {
+      console.error('Unhandled promise rejection:', e.reason);
+    });
+
+    // Enhanced Mol* error handling helper
+    window.handleMolstarError = function (error, containerId) {
+      console.error('Mol* error:', error);
+      const container = document.getElementById(containerId);
+      if (container) {
+        container.innerHTML = `
+          <div class="error-message glass-effect" style="padding: 24px; text-align: center;">
+            <h4 style="color: #dc3545; margin-bottom: 16px;">
+              <i class="fas fa-exclamation-triangle"></i> Viewer Error
+            </h4>
+            <p style="margin-bottom: 20px; color: #6c757d;">
+              Failed to load the molecular structure viewer. This might be due to network issues or browser compatibility.
+            </p>
+            <button onclick="location.reload()" class="btn btn-secondary btn-sm">
+              <i class="fas fa-redo"></i> Retry Loading
+            </button>
+          </div>
+        `;
+      }
+    };
+
+    // Enhanced memory cleanup with better error handling
+    window.addEventListener('beforeunload', function () {
+      if (window.molstarViewers) {
+        Object.values(window.molstarViewers).forEach(viewer => {
+          if (viewer && viewer.clear) {
+            try {
+              viewer.clear();
+            } catch (e) {
+              console.warn('Error cleaning up viewer:', e);
+            }
+          }
+        });
+      }
+    });
+
+    // Enhanced performance monitoring
+    if ('performance' in window) {
+      window.addEventListener('load', function () {
+        setTimeout(function () {
+          const perfData = performance.timing;
+          const loadTime = perfData.loadEventEnd - perfData.navigationStart;
+          console.log('Page load time:', loadTime + 'ms');
+
+          // Report slow loading times
+          if (loadTime > 3000) {
+            console.warn('Slow page load detected:', loadTime + 'ms');
+          }
+        }, 0);
+      });
+    }
+
+    // Enhanced accessibility features
+    document.addEventListener('keydown', function (e) {
+      // Enhance keyboard navigation
+      if (e.key === 'Tab') {
+        document.body.classList.add('keyboard-navigation');
+      }
+    });
+
+    document.addEventListener('mousedown', function () {
+      document.body.classList.remove('keyboard-navigation');
+    });
+
+    // Theme detection and adaptation
+    if (window.matchMedia) {
+      const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      function handleDarkModeChange(e) {
+        if (e.matches) {
+          document.body.classList.add('dark-mode-preferred');
+        } else {
+          document.body.classList.remove('dark-mode-preferred');
+        }
+      }
+
+      darkModeQuery.addListener(handleDarkModeChange);
+      handleDarkModeChange(darkModeQuery);
+    }
+
+    // Enhanced intersection observer for animations
+    if ('IntersectionObserver' in window) {
+      const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+      };
+
+      const observer = new IntersectionObserver(function (entries) {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('fade-in');
+          }
+        });
+      }, observerOptions);
+
+      // Observe elements that should animate in
+      document.querySelectorAll('.animate-on-scroll').forEach(el => {
+        observer.observe(el);
+      });
+    }
+  </script>
+
+  <!-- Analytics (if needed) -->
+  <% if (typeof analytics !=='undefined' && analytics) { %>
+    <script>
+      console.log('Enhanced analytics initialized');
+      // Add your analytics code here
+    </script>
+    <% } %>
+
+      <!-- Additional CSS for keyboard navigation and accessibility -->
+      <style>
+        .keyboard-navigation *:focus {
+          outline: 3px solid #667eea !important;
+          outline-offset: 2px !important;
+        }
+
+        .dark-mode-preferred {
+          /* Add dark mode styles if needed */
+        }
+
+        .animate-on-scroll {
+          opacity: 0;
+          transform: translateY(30px);
+          transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .animate-on-scroll.fade-in {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        /* Enhanced button styles */
+        .btn {
+          transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+          border-radius: 8px !important;
+          font-weight: 600 !important;
+          position: relative !important;
+          overflow: hidden !important;
+        }
+
+        .btn:hover {
+          transform: translateY(-2px) !important;
+          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+        }
+
+        .btn:active {
+          transform: translateY(0) !important;
+        }
+
+        /* Enhanced form elements */
+        .form-control,
+        .form-select {
+          transition: all 0.3s ease !important;
+          border-radius: 8px !important;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+          border-color: #667eea !important;
+        }
+
+        /* Enhanced cards */
+        .card {
+          transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+          border-radius: 12px !important;
+          overflow: hidden !important;
+        }
+
+        .card:hover {
+          transform: translateY(-4px) !important;
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1) !important;
+        }
+      </style>
+</body>
+
+</html>

@@ -1,0 +1,52 @@
+run_dir = "runs/DQ2.2_glia_alpha1"
+
+mode = "local"
+ncores = 6
+
+postprocess = true
+clean = true
+
+molecules = [
+   "pdb/dq2_2_ed_nm.pdb",
+   "HADDOCK_PEPTIDE/DQ2.2_glia_alpha1/peptide_ens.pdb"
+]
+
+[topoaa]
+
+[rigidbody]
+ambig_fname = "restraints/protein-peptide_ambig.tbl"
+sampling = 500
+
+[caprieval]
+reference_fname = "pdb/dq2_2_ref.pdb"
+
+[caprieval]
+reference_fname = "pdb/dq2_2_ref.pdb"
+
+[emref]
+tolerance = 5
+ambig_fname = "restraints/protein-peptide_ambig.tbl"
+
+[caprieval]
+reference_fname = "pdb/dq2_2_ref.pdb"
+
+[seletop]
+select = 10
+
+[caprieval]
+reference_fname = "pdb/dq2_2_ref.pdb"
+
+[rmsdmatrix]
+
+[clustrmsd]
+clust_cutoff = 5
+plot_matrix = true
+
+[caprieval]
+reference_fname = "pdb/dq2_2_ref.pdb"
+
+[seletopclusts]
+top_models = 4
+
+[caprieval]
+reference_fname = "pdb/dq2_2_ref.pdb"

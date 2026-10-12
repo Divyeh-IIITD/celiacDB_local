@@ -1,0 +1,401 @@
+<!-- Bootstrap & FontAwesome -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<!-- Mol* Viewer CSS -->
+<link rel="stylesheet" type="text/css" href="https://www.ebi.ac.uk/pdbe/pdb-component-library/css/pdbe-molstar-3.1.0.css">
+
+<style>
+  .prep-container {
+    max-width: 1200px;
+    margin: 30px auto;
+    padding: 0 20px;
+  }
+  .card-gradient-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px 12px 0 0;
+    padding: 20px 24px;
+  }
+  .card-custom {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    background: white;
+    overflow: hidden;
+  }
+  .conformer-tab-btn {
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 8px 18px;
+    transition: all 0.2s ease;
+  }
+  .molstar-box {
+    width: 100%;
+    height: 480px;
+    background: #0f172a;
+    border-radius: 8px;
+    position: relative;
+  }
+  .badge-secondary-structure {
+    font-size: 0.85rem;
+    padding: 6px 12px;
+    border-radius: 6px;
+  }
+  .quick-seq-btn {
+    margin-right: 8px;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+  }
+</style>
+
+<div class="prep-container">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold mb-1">🧬 Peptide Preparation & Ensemble Generator</h2>
+      <p class="text-muted mb-0">Prepare peptide starting conformations and multi-model ensemble under Custom Docking using native PyMOL on localhost.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="/custom-docking" class="btn btn-outline-primary">
+        <i class="fas fa-bullseye me-1"></i> Custom Docking
+      </a>
+      <a href="/" class="btn btn-outline-secondary">
+        <i class="fas fa-home me-1"></i> Home
+      </a>
+    </div>
+  </div>
+
+  <!-- Navigation Tabs under Custom Docking -->
+  <div class="d-flex justify-content-center mb-4">
+    <div class="nav nav-pills p-1 bg-white rounded-pill shadow-sm border">
+      <a href="/custom-docking" class="nav-link rounded-pill text-secondary px-4 py-2" style="font-weight: 600;">
+        <i class="fas fa-bullseye me-2 text-primary"></i> 1. Direct Docking
+      </a>
+      <a href="/custom-docking/peptide-prep" class="nav-link rounded-pill active px-4 py-2" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; font-weight: 600;">
+        <i class="fas fa-dna me-2"></i> 2. Peptide Prep (PyMOL Ensemble)
+      </a>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Left Column: Input Form -->
+    <div class="col-lg-5">
+      <div class="card card-custom">
+        <div class="card-gradient-header">
+          <h5 class="mb-0"><i class="fas fa-code me-2"></i>1. Peptide Sequence Input</h5>
+        </div>
+        <div class="card-body p-4">
+          <form id="peptidePrepForm">
+            <div class="mb-3">
+              <label for="sequenceInput" class="form-label fw-bold">Amino Acid Sequence (One-Letter Code):</label>
+              <textarea
+                class="form-control font-monospace"
+                id="sequenceInput"
+                name="sequence"
+                rows="4"
+                placeholder="e.g. PQLQPL or QPFPQP"
+                style="text-transform: uppercase; font-size: 1.1rem; letter-spacing: 2px;"
+                required
+              ></textarea>
+              <div class="d-flex justify-content-between mt-1 text-muted small">
+                <span id="charCount">0 residues</span>
+                <span>Allowed: 3 - 50 standard amino acids</span>
+              </div>
+            </div>
+
+            <!-- Quick Sequence Examples -->
+            <div class="mb-4">
+              <label class="form-label small fw-bold text-muted mb-1">Common Gluten Epitope Sequences:</label>
+              <div>
+                <button type="button" class="btn btn-sm btn-outline-secondary quick-seq-btn" onclick="setSequence('PQLQPL')">PQLQPL (6-mer)</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary quick-seq-btn" onclick="setSequence('QPFPQP')">QPFPQP (6-mer)</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary quick-seq-btn" onclick="setSequence('PFPQPELPY')">PFPQPELPY (9-mer)</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary quick-seq-btn" onclick="setSequence('LQLQPFPQPQLPYP')">14-mer DQ2</button>
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="d-grid gap-2">
+              <button type="submit" id="generateBtn" class="btn btn-primary btn-lg fw-bold py-3">
+                <i class="fas fa-magic me-2"></i>Generate 3 Conformations & Ensemble
+              </button>
+            </div>
+          </form>
+
+          <div id="prepAlert" class="alert mt-3 d-none"></div>
+
+          <!-- Technical Specs Note -->
+          <div class="mt-4 p-3 bg-light rounded-3 small">
+            <div class="fw-bold mb-2 text-dark"><i class="fas fa-info-circle text-primary me-1"></i> Generated Conformations:</div>
+            <ul class="mb-0 ps-3 text-muted">
+              <li><strong>Alpha Helix:</strong> PyMOL <code>fab(ss=1)</code> canonical $\alpha$-helix backbone.</li>
+              <li><strong>Beta Sheet:</strong> PyMOL <code>fab(ss=2)</code> anti-parallel extended $\beta$-strand.</li>
+              <li><strong>Polyproline II (PPII):</strong> Dihedrals $\phi \approx -75^\circ, \psi \approx +145^\circ$, representative of native HLA-DQ binding groove conformation.</li>
+              <li><strong>Multi-Model Ensemble:</strong> Consolidated <code>peptide_ens.pdb</code> containing MODEL 1 (Helix), MODEL 2 (PPII), and MODEL 3 (Sheet).</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: 3D Visualization & Conformation Results -->
+    <div class="col-lg-7">
+      <div class="card card-custom h-100">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+          <h5 class="mb-0 fw-bold text-dark"><i class="fas fa-cube text-primary me-2"></i>3D Conformation Viewer</h5>
+          <div class="d-flex align-items-center gap-2">
+            <div id="tabConformers" class="btn-group btn-group-sm d-none">
+              <button type="button" class="btn btn-primary conformer-tab-btn" id="btnTabHelix" onclick="switchConformer('helix', this)">
+                <i class="fas fa-dna me-1"></i> Helix
+              </button>
+              <button type="button" class="btn btn-outline-secondary conformer-tab-btn" id="btnTabPpii" onclick="switchConformer('ppii', this)">
+                <i class="fas fa-wave-square me-1"></i> PPII
+              </button>
+              <button type="button" class="btn btn-outline-secondary conformer-tab-btn" id="btnTabSheet" onclick="switchConformer('sheet', this)">
+                <i class="fas fa-layer-group me-1"></i> Sheet
+              </button>
+              <button type="button" class="btn btn-outline-secondary conformer-tab-btn" id="btnTabEnsemble" onclick="switchConformer('ensemble', this)">
+                <i class="fas fa-cubes me-1"></i> Ensemble (All 3)
+              </button>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-secondary d-none" id="btnResetCamera" onclick="resetCamera()" title="Reset 3D View">
+              <i class="fas fa-sync-alt"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="card-body p-4 d-flex flex-column">
+          <!-- Mol* Viewer Container -->
+          <div id="viewerPlaceholder" class="d-flex flex-column align-items-center justify-content-center border rounded-3 p-5 text-center my-auto" style="min-height: 400px; background: #f8fafc;">
+            <i class="fas fa-dna fa-4x text-muted mb-3 opacity-50"></i>
+            <h5 class="text-muted">No conformation generated yet</h5>
+            <p class="text-muted small mb-0">Enter a sequence on the left and click <strong>Generate</strong> to build the 3 PyMOL conformations and ensemble.</p>
+          </div>
+
+          <div id="viewerWrapper" class="d-none position-relative mb-3">
+            <div id="molstarViewer" class="molstar-box"></div>
+          </div>
+
+          <!-- Download & Next Action Section -->
+          <div id="resultsActions" class="mt-auto pt-3 border-top d-none">
+            <h6 class="fw-bold mb-3"><i class="fas fa-download text-success me-2"></i>Download Conformations & Proceed:</h6>
+            <div class="row g-2 mb-3">
+              <div class="col-sm-6 col-md-3">
+                <a id="dlHelix" href="#" class="btn btn-outline-primary w-100 btn-sm text-truncate">
+                  <i class="fas fa-file-download me-1"></i> Helix PDB
+                </a>
+              </div>
+              <div class="col-sm-6 col-md-3">
+                <a id="dlPpii" href="#" class="btn btn-outline-primary w-100 btn-sm text-truncate">
+                  <i class="fas fa-file-download me-1"></i> PPII PDB
+                </a>
+              </div>
+              <div class="col-sm-6 col-md-3">
+                <a id="dlSheet" href="#" class="btn btn-outline-primary w-100 btn-sm text-truncate">
+                  <i class="fas fa-file-download me-1"></i> Sheet PDB
+                </a>
+              </div>
+              <div class="col-sm-6 col-md-3">
+                <a id="dlEnsemble" href="#" class="btn btn-success w-100 btn-sm fw-bold text-truncate" title="Multi-model ensemble PDB for HADDOCK3">
+                  <i class="fas fa-layer-group me-1"></i> Ensemble PDB
+                </a>
+              </div>
+            </div>
+
+            <!-- Direct Docking Button -->
+            <div class="d-grid">
+              <a id="proceedDockingBtn" href="/custom-docking" class="btn btn-gradient btn-primary btn-lg fw-bold">
+                <i class="fas fa-rocket me-2"></i>Perform Direct Docking with this Ensemble →
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PDBe Molstar JS -->
+<script type="text/javascript" src="https://www.ebi.ac.uk/pdbe/pdb-component-library/js/pdbe-molstar-plugin-3.1.0.js"></script>
+
+<script>
+  let currentSessionData = null;
+  let viewerInstance = null;
+  let activeTab = "helix";
+  let isViewerLoading = false;
+
+  function setSequence(seq) {
+    const input = document.getElementById("sequenceInput");
+    input.value = seq;
+    updateCount();
+  }
+
+  function updateCount() {
+    const val = document.getElementById("sequenceInput").value.replace(/\s+/g, "");
+    document.getElementById("charCount").textContent = `${val.length} residues`;
+  }
+
+  document.getElementById("sequenceInput").addEventListener("input", updateCount);
+
+  function resetCamera() {
+    if (viewerInstance && viewerInstance.plugin && viewerInstance.plugin.managers && viewerInstance.plugin.managers.camera) {
+      try {
+        viewerInstance.plugin.managers.camera.reset();
+      } catch (_) {}
+    }
+  }
+
+  // Initialize or update Mol* Viewer without destroying WebGL context
+  async function initViewer(pdbUrl) {
+    const container = document.getElementById("molstarViewer");
+    if (!container) return;
+
+    console.log("🔬 Loading PDB into Mol* viewer:", pdbUrl);
+
+    // If viewer is already initialized, call viewerInstance.load() in place
+    if (viewerInstance && typeof viewerInstance.load === "function") {
+      try {
+        isViewerLoading = true;
+        await viewerInstance.clear();
+        await viewerInstance.load({
+          url: pdbUrl,
+          format: "pdb",
+          isBinary: false,
+        });
+        isViewerLoading = false;
+        return;
+      } catch (err) {
+        console.warn("⚠️ viewerInstance.load encountered error, recreating container node:", err);
+      }
+    }
+
+    // Clean container replacement to prevent React/DOM root collisions
+    const parent = container.parentNode;
+    const newContainer = document.createElement("div");
+    newContainer.id = "molstarViewer";
+    newContainer.className = "molstar-box";
+    parent.replaceChild(newContainer, container);
+
+    try {
+      isViewerLoading = true;
+      viewerInstance = new PDBeMolstarPlugin();
+      const options = {
+        moleculeId: "peptide",
+        customData: {
+          url: pdbUrl,
+          format: "pdb",
+          binary: false,
+        },
+        alphafoldView: false,
+        bgColor: { r: 15, g: 23, b: 42 },
+        hideControls: false,
+        hideCanvasControls: ["expand", "fullscreen"],
+        sequencePanel: false,
+        loadMaps: false,
+        validationAnnotation: false,
+        domainAnnotation: false,
+        lowPrecisionCoords: true,
+        selectInteraction: true,
+        lighting: "matte",
+        defaultPreset: "default",
+      };
+
+      await viewerInstance.render(newContainer, options);
+      console.log("✅ Mol* viewer rendered successfully");
+    } catch (e) {
+      console.error("❌ Mol* rendering error:", e);
+    } finally {
+      isViewerLoading = false;
+    }
+  }
+
+  async function switchConformer(type, btnElement) {
+    if (!currentSessionData) return;
+    activeTab = type;
+
+    // Update active button classes
+    document.querySelectorAll("#tabConformers button").forEach(btn => {
+      btn.className = "btn btn-outline-secondary conformer-tab-btn";
+    });
+
+    if (btnElement) {
+      btnElement.className = "btn btn-primary conformer-tab-btn";
+    } else {
+      const typeCapitalized = type.charAt(0).toUpperCase() + type.slice(1);
+      const activeBtn = document.getElementById(`btnTab${typeCapitalized}`);
+      if (activeBtn) activeBtn.className = "btn btn-primary conformer-tab-btn";
+    }
+
+    // For ensemble 3D view, load overlay PDB where all 3 conformers are present as chains A, B, C!
+    let relativePath;
+    if (type === "ensemble") {
+      relativePath = currentSessionData.files.overlay || currentSessionData.files.ensemble;
+    } else {
+      relativePath = currentSessionData.files[type];
+    }
+
+    if (!relativePath) return;
+
+    const fullUrl = window.location.origin + "/" + relativePath;
+    await initViewer(fullUrl);
+  }
+
+  document.getElementById("peptidePrepForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    const btn = document.getElementById("generateBtn");
+    const alertBox = document.getElementById("prepAlert");
+    const rawSeq = document.getElementById("sequenceInput").value.trim().toUpperCase();
+
+    alertBox.className = "alert alert-info mt-3";
+    alertBox.classList.remove("d-none");
+    alertBox.innerHTML = '<div class="spinner-border spinner-border-sm me-2" role="status"></div> Running PyMOL on localhost to generate 3 conformations and ensemble...';
+    btn.disabled = true;
+
+    try {
+      const response = await fetch("/custom-docking/peptide-prep/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sequence: rawSeq }),
+      });
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || "Generation failed");
+      }
+
+      currentSessionData = result.data;
+
+      alertBox.className = "alert alert-success mt-3";
+      alertBox.innerHTML = `<strong><i class="fas fa-check-circle me-1"></i> Success!</strong> Generated 3 conformers (Helix, Sheet, PPII) and ensemble for ${currentSessionData.sequence} (${currentSessionData.length} aa).`;
+
+      // Update UI elements
+      document.getElementById("viewerPlaceholder").classList.add("d-none");
+      document.getElementById("viewerWrapper").classList.remove("d-none");
+      document.getElementById("tabConformers").classList.remove("d-none");
+      const resetBtn = document.getElementById("btnResetCamera");
+      if (resetBtn) resetBtn.classList.remove("d-none");
+      document.getElementById("resultsActions").classList.remove("d-none");
+
+      // Set download links
+      document.getElementById("dlHelix").href = `/custom-docking/peptide-prep/download/${currentSessionData.sessionId}/helix`;
+      document.getElementById("dlPpii").href = `/custom-docking/peptide-prep/download/${currentSessionData.sessionId}/ppii`;
+      document.getElementById("dlSheet").href = `/custom-docking/peptide-prep/download/${currentSessionData.sessionId}/sheet`;
+      document.getElementById("dlEnsemble").href = `/custom-docking/peptide-prep/download/${currentSessionData.sessionId}/ensemble`;
+
+      // Set proceed to docking link
+      const proceedBtn = document.getElementById("proceedDockingBtn");
+      if (proceedBtn) {
+        proceedBtn.href = `/custom-docking?prepSession=${currentSessionData.sessionId}`;
+      }
+
+      // Initial load Helix
+      await initViewer(window.location.origin + "/" + currentSessionData.files.helix);
+
+    } catch (err) {
+      alertBox.className = "alert alert-danger mt-3";
+      alertBox.textContent = `❌ ${err.message}`;
+    } finally {
+      btn.disabled = false;
+    }
+  });
+</script>

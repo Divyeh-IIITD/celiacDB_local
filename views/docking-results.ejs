@@ -1,0 +1,488 @@
+<!-- Bootstrap -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+<!-- Mol* Viewer CSS -->
+<link rel="stylesheet" type="text/css" href="https://www.ebi.ac.uk/pdbe/pdb-component-library/css/pdbe-molstar-3.1.0.css">
+
+<!-- Custom CSS -->
+<link rel="stylesheet" href="/css/docking-results.css">
+
+<% 
+
+const isCustomDocking = !!dockingData;
+const displayProtein = isCustomDocking ? dockingData.protein : protein;
+const displayPeptide = isCustomDocking ? dockingData.peptideSequence : peptideName;
+const displayScore = isCustomDocking ? dockingData.bestScore : null;
+const actualDocking = isCustomDocking ? dockingData.actualDocking : true;
+const dockingMethod = isCustomDocking ? dockingData.dockingMethod : "PRE_COMPUTED";
+const isHaddock = isCustomDocking 
+  ? (dockingData.engine === "haddock3" || !!dockingData.haddockMetrics || (dockingData.dockingMethod && dockingData.dockingMethod.includes("HADDOCK")))
+  : (typeof dockingResult !== 'undefined' && dockingResult && (dockingResult.engine === "haddock3" || !!dockingResult.haddockMetrics));
+const haddockMetrics = isCustomDocking ? dockingData.haddockMetrics : (typeof dockingResult !== 'undefined' && dockingResult ? dockingResult.haddockMetrics : null);
+%>
+
+<div class="container">
+  <!-- Header Section -->
+  <div class="header-section">
+    <% if (isCustomDocking) { %>
+      <h2>🧬 Custom <%= isHaddock ? 'HADDOCK3' : 'Vina' %> Results: <%= displayProtein.name %></h2>
+      <div class="peptide-info">
+        <span class="peptide-sequence">Peptide: <%= displayPeptide %></span>
+        <span class="timestamp">Generated: <%= new Date(dockingData.timestamp).toLocaleString() %></span>
+        <span class="method-badge badge bg-<%= isHaddock ? 'info' : (actualDocking ? 'primary' : 'secondary') %>">
+          <%= isHaddock ? 'HADDOCK3 Restraints' : (actualDocking ? 'Real Docking' : 'Simulation') %>
+        </span>
+      </div>
+    <% } else { %>
+      <h2>Docking Results: <%= displayProtein.name %> with <%= displayPeptide %></h2>
+    <% } %>
+    
+    <div class="header-actions">
+      <% if (isCustomDocking) { %>
+        <a href="/custom-docking" class="btn btn-secondary">← New Custom Docking</a>
+        <a href="/docking-analysis" class="btn btn-outline-secondary">Pre-computed Results</a>
+      <% } else { %>
+        <a href="/docking-analysis" class="btn btn-secondary">← Select new pair</a>
+        <a href="/hladq-protein/<%= displayProtein._id %>" class="btn btn-outline">View Protein Details</a>
+      <% } %>
+      
+      <!-- Download Files -->
+      <div class="dropdown">
+        <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+          ⬇ Download Files
+        </button>
+        <ul class="dropdown-menu">
+          <% if (isCustomDocking) { %>
+            <li><a class="dropdown-item" href="/uploads/<%= dockingData.protein.mainProteinFile %>" download>📄 Protein PDB</a></li>
+            <li><a class="dropdown-item" href="/<%= dockingData.peptidePdbPath %>" download>🧬 Peptide PDB</a></li>
+            <li><a class="dropdown-item" href="/<%= dockingData.complexPdbPath %>" download>🔬 Complex PDB</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <% if (isHaddock) { %>
+              <li><a class="dropdown-item" href="/temp-results/<%= sessionId %>/active_passive.tbl" download>🎯 Restraints (.tbl)</a></li>
+              <li><a class="dropdown-item" href="/temp-results/<%= sessionId %>/haddock.cfg" download>⚙️ HADDOCK Config (.cfg)</a></li>
+            <% } else { %>
+              <li><a class="dropdown-item" href="#" onclick="downloadConfig()">⚙️ Configuration</a></li>
+            <% } %>
+            <li><a class="dropdown-item" href="#" onclick="downloadLog()">📋 Docking Log</a></li>
+          <% } else { %>
+            <li><a class="dropdown-item" href="/docking-results/<%= displayProtein._id %>/<%= encodeURIComponent(displayPeptide) %>/download-all-zip">📦 Download All Files (ZIP)</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <% if (proteinPdb) { %>
+              <li><a class="dropdown-item" href="/uploads/<%= proteinPdb.storedName %>" download>📄 Protein PDB</a></li>
+            <% } %>
+            <% if (peptidePdb) { %>
+              <li><a class="dropdown-item" href="/uploads/<%= peptidePdb.storedName %>" download>🧬 Peptide PDB</a></li>
+            <% } %>
+            <% if (complexPdb) { %>
+              <li><a class="dropdown-item" href="/uploads/<%= complexPdb.storedName %>" download>🔬 Complex PDB</a></li>
+            <% } %>
+          <% } %>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Alert for Custom Docking -->
+  <% if (isCustomDocking) { %>
+    <div class="alert alert-<%= isHaddock ? 'info' : (actualDocking ? 'success' : 'info') %> alert-dismissible fade show" role="alert">
+      <% if (isHaddock) { %>
+        <strong>🔬 HADDOCK3 Restraint-Driven Docking Completed!</strong>
+        Your peptide has been modeled into the HLA-DQ binding groove using ambiguous interaction restraints (AIR) and semi-flexible simulated annealing refinement.
+      <% } else if (actualDocking) { %>
+        <strong>✅ Real Docking Completed Successfully!</strong> 
+        Your custom peptide has been successfully docked with the selected HLA-DQ protein using AutoDock Vina.
+      <% } else { %>
+        <strong>ℹ️ Enhanced Simulation Completed!</strong> 
+        Your custom peptide has been analyzed using advanced structural modeling and binding prediction algorithms.
+      <% } %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  <% } %>
+
+  <!-- 3D Molecular Viewers with Mol* -->
+  <div class="viewers-section">
+    <div class="viewer-grid">
+      
+      <!-- HLA-DQ Protein -->
+      <div class="viewer-card">
+        <div class="viewer-header">
+          <h4>🧬 HLA-DQ Protein (<%= displayProtein.name %>)</h4>
+          <small class="text-muted">Original receptor structure</small>
+        </div>
+        <div id="proteinViewer" class="molstar-container"></div>
+        <div class="viewer-footer">
+          <small>Complete HLA-DQ protein structure</small>
+        </div>
+      </div>
+
+      <!-- Peptide Structure -->
+      <div class="viewer-card">
+        <div class="viewer-header">
+          <h4>🧬 <% if (isCustomDocking) { %>Custom <% } %>Peptide Structure</h4>
+          <small class="text-muted">Input peptide structure</small>
+        </div>
+        <div id="peptideViewer" class="molstar-container"></div>
+        <div class="viewer-footer">
+          <% if (isCustomDocking) { %>
+            <small>Sequence: <%= displayPeptide %> (<%= displayPeptide.length %> aa)</small>
+          <% } else if (peptidePdb) { %>
+            <small>File: <%= peptidePdb.originalName %></small>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Docked Complex -->
+      <div class="viewer-card full-width">
+        <div class="viewer-header">
+          <h4>🔬 Docked Complex (Protein + <% if (isCustomDocking) { %>Custom <% } %>Peptide)</h4>
+          <small class="text-muted">
+            <%= isHaddock ? 'HADDOCK3 Best Cluster Model' : (actualDocking ? 'AutoDock Vina result' : 'Enhanced simulation') %> - 
+            Protein in Chain A, Peptide in Chain B
+          </small>
+        </div>
+        <div id="complexViewer" class="molstar-container large"></div>
+        <div class="viewer-footer">
+          <small>Interactive 3D visualization - Protein (chain A) + Peptide (chain B) - Optimized binding pose</small>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Docking Score / HADDOCK Score Section -->
+  <div class="score-section">
+    <h3><%= isHaddock ? '📊 HADDOCK3 Scoring & Cluster Metrics' : '📊 Binding Affinity Score' %></h3>
+    <% if (isHaddock && haddockMetrics) { %>
+      <div class="score-card real-docking">
+        <div class="score-header">
+          <span class="method-label">
+            🔬 HADDOCK3 Restraint Score (Top Cluster <%= haddockMetrics.clusterRank %>)
+          </span>
+        </div>
+        <div class="score-main">
+          <span class="score-value"><%= haddockMetrics.haddockScore.toFixed(3) %></span>
+          <span class="score-unit">a.u.</span>
+        </div>
+        <div class="score-details row g-3 mt-2">
+          <div class="col-6 col-md-3">
+            <span class="label">Cluster ID:</span>
+            <span class="value fw-bold">Cluster <%= haddockMetrics.clusterId %></span>
+          </div>
+          <div class="col-6 col-md-3">
+            <span class="label">i-RMSD:</span>
+            <span class="value"><%= haddockMetrics.irmsd.toFixed(3) %> Å</span>
+          </div>
+          <div class="col-6 col-md-3">
+            <span class="label">l-RMSD:</span>
+            <span class="value"><%= haddockMetrics.lrmsd.toFixed(3) %> Å</span>
+          </div>
+          <div class="col-6 col-md-3">
+            <span class="label">DockQ Score:</span>
+            <span class="value text-success fw-bold"><%= haddockMetrics.dockq.toFixed(3) %></span>
+          </div>
+          <div class="col-6 col-md-3">
+            <span class="label">Buried Surface (BSA):</span>
+            <span class="value"><%= haddockMetrics.bsa.toFixed(1) %> Å²</span>
+          </div>
+          <div class="col-6 col-md-3">
+            <span class="label">Electrostatic (Eelec):</span>
+            <span class="value"><%= haddockMetrics.elec.toFixed(1) %> kcal/mol</span>
+          </div>
+          <div class="col-6 col-md-3">
+            <span class="label">Van der Waals (Evdw):</span>
+            <span class="value"><%= haddockMetrics.vdw.toFixed(1) %> kcal/mol</span>
+          </div>
+          <div class="col-6 col-md-3">
+            <span class="label">Desolvation (Edesolv):</span>
+            <span class="value"><%= haddockMetrics.desolv.toFixed(1) %> kcal/mol</span>
+          </div>
+        </div>
+        <div class="score-note mt-3">
+          Lower (more negative) HADDOCK score indicates more favorable binding energy and interface complementarity.
+        </div>
+      </div>
+    <% } else if (isCustomDocking) { %>
+      <div class="score-card <%= actualDocking ? 'real-docking' : 'simulation' %>">
+        <div class="score-header">
+          <span class="method-label">
+            <%= actualDocking ? '🔬 AutoDock Vina Score' : '🧮 Predicted Score' %>
+          </span>
+        </div>
+        <div class="score-main">
+          <span class="score-value"><%= displayScore.affinity %></span>
+          <span class="score-unit">kcal/mol</span>
+        </div>
+        <div class="score-details">
+          <div class="score-item">
+            <span class="label">Mode:</span>
+            <span class="value"><%= displayScore.mode %></span>
+          </div>
+          <div class="score-item">
+            <span class="label">RMSD Range:</span>
+            <span class="value"><%= displayScore.rmsdLb.toFixed(3) %> - <%= displayScore.rmsdUb.toFixed(3) %> Å</span>
+          </div>
+        </div>
+        <div class="score-note">
+          Lower (more negative) values indicate stronger binding affinity.
+          <% if (!actualDocking) { %>
+          <br><small class="text-muted">Score based on sequence analysis and structural modeling.</small>
+          <% } %>
+        </div>
+      </div>
+    <% } else { %>
+      <div id="scoreDisplay">
+        <div class="loading">Loading docking score...</div>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- Configuration -->
+  <div class="config-section">
+    <h3>⚙️ Docking Configuration</h3>
+    <% if (isHaddock) { %>
+      <div class="config-display">
+        <div class="config-header">
+          <span class="config-method">HADDOCK3 Pipeline Parameters</span>
+        </div>
+        <div class="config-grid">
+          <div class="config-item">
+            <span class="config-key">Docking Engine</span>
+            <span class="config-value">HADDOCK3 Restraint-Driven</span>
+          </div>
+          <div class="config-item">
+            <span class="config-key">Restraints</span>
+            <span class="config-value">Ambiguous Interaction (AIR)</span>
+          </div>
+          <div class="config-item">
+            <span class="config-key">Pipeline Stages</span>
+            <span class="config-value">topoaa → rigidbody → flexref → emref → clustfcc</span>
+          </div>
+          <div class="config-item">
+            <span class="config-key">Clustering</span>
+            <span class="config-value">Fraction of Common Contacts (FCC)</span>
+          </div>
+        </div>
+      </div>
+    <% } else if (isCustomDocking) { %>
+      <div class="config-display">
+        <div class="config-header">
+          <span class="config-method">
+            <%= actualDocking ? 'AutoDock Vina Parameters' : 'Simulation Parameters' %>
+          </span>
+        </div>
+        <div class="config-grid">
+          <div class="config-item">
+            <span class="config-key">Search Space</span>
+            <span class="config-value">47×47×47 Å</span>
+          </div>
+          <div class="config-item">
+            <span class="config-key">Exhaustiveness</span>
+            <span class="config-value"><%= actualDocking ? '100' : '8 (simulated)' %></span>
+          </div>
+          <div class="config-item">
+            <span class="config-key">Number Of Modes</span>
+            <span class="config-value"><%= actualDocking ? '10' : '9 (simulated)' %></span>
+          </div>
+          <div class="config-item">
+            <span class="config-key">Energy Range</span>
+            <span class="config-value">4 kcal/mol</span>
+          </div>
+        </div>
+      </div>
+    <% } else { %>
+      <div id="configDisplay">
+        <div class="loading">Loading configuration...</div>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- Custom Docking Specific Sections -->
+  <% if (isCustomDocking) { %>
+    <!-- Detailed Log Information -->
+    <div class="log-section">
+      <h3>📋 Detailed Docking Log</h3>
+      <div class="log-display">
+        <div class="log-header">
+          <span class="log-type">
+            <%= actualDocking ? 'AutoDock Vina Output' : 'Simulation Output' %>
+          </span>
+        </div>
+        <button class="btn btn-outline-primary mb-3" onclick="toggleLogDetails()">
+          <span id="logToggleText">Show Full Log</span>
+        </button>
+        <div id="logContent" class="log-content" style="display: none;">
+          <pre><%= dockingData.logContent %></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Analysis Summary -->
+    <div class="analysis-section">
+      <h3>🔬 Analysis Summary</h3>
+      <div class="row">
+        <div class="col-md-6">
+          <div class="analysis-card">
+            <h5>📈 Binding Assessment</h5>
+            <div class="binding-assessment">
+              <% const affinity = displayScore.affinity; %>
+              <% if (affinity <= -9) { %>
+                <div class="assessment excellent">
+                  <span class="assessment-label">Excellent Binding</span>
+                  <span class="assessment-desc">Very strong binding affinity predicted</span>
+                </div>
+              <% } else if (affinity <= -7) { %>
+                <div class="assessment good">
+                  <span class="assessment-label">Good Binding</span>
+                  <span class="assessment-desc">Strong binding affinity predicted</span>
+                </div>
+              <% } else if (affinity <= -5) { %>
+                <div class="assessment moderate">
+                  <span class="assessment-label">Moderate Binding</span>
+                  <span class="assessment-desc">Moderate binding affinity predicted</span>
+                </div>
+              <% } else { %>
+                <div class="assessment weak">
+                  <span class="assessment-label">Weak Binding</span>
+                  <span class="assessment-desc">Low binding affinity predicted</span>
+                </div>
+              <% } %>
+            </div>
+            <% if (!actualDocking) { %>
+            <div class="mt-2">
+              <small class="text-muted">Assessment based on sequence analysis</small>
+            </div>
+            <% } %>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="analysis-card">
+            <h5>🎯 Peptide Properties</h5>
+            <div class="peptide-properties">
+              <div class="property-item">
+                <span class="property-label">Length:</span>
+                <span class="property-value"><%= displayPeptide.length %> amino acids</span>
+              </div>
+              <div class="property-item">
+                <span class="property-label">Sequence:</span>
+                <span class="property-value sequence-display"><%= displayPeptide %></span>
+              </div>
+              <div class="property-item">
+                <span class="property-label">Binding Mode:</span>
+                <span class="property-value">Mode <%= displayScore.mode %> (Best pose)</span>
+              </div>
+              <div class="property-item">
+                <span class="property-label">Method:</span>
+                <span class="property-value">
+                  <%= actualDocking ? 'Real AutoDock Vina' : 'Enhanced Simulation' %>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Process Validation Section -->
+    <div class="validation-section">
+      <h3>🔍 Process Validation</h3>
+      <div class="row">
+        <div class="col-md-12">
+          <div class="validation-card">
+            <h5>✅ Process Steps Completed</h5>
+            <div class="process-steps">
+              <div class="step completed">
+                <span class="step-icon">✅</span>
+                <span class="step-text">Peptide sequence validation</span>
+              </div>
+              <div class="step completed">
+                <span class="step-icon">✅</span>
+                <span class="step-text">3D peptide structure generation</span>
+              </div>
+              <div class="step completed">
+                <span class="step-icon">✅</span>
+                <span class="step-text">Protein structure preparation (membranes removed)</span>
+              </div>
+              <div class="step <%= actualDocking ? 'completed' : 'simulated' %>">
+                <span class="step-icon"><%= actualDocking ? '✅' : '🔬' %></span>
+                <span class="step-text">
+                  <%= actualDocking ? 'Real molecular docking with AutoDock Vina' : 'Enhanced binding simulation' %>
+                </span>
+              </div>
+              <div class="step completed">
+                <span class="step-icon">✅</span>
+                <span class="step-text">Complex structure generation</span>
+              </div>
+              <div class="step completed">
+                <span class="step-icon">✅</span>
+                <span class="step-text">Results processing and visualization</span>
+              </div>
+            </div>
+            
+            <% if (!actualDocking) { %>
+            <div class="alert alert-info mt-3">
+              <strong>ℹ️ Simulation Mode:</strong> AutoDock Vina was not available, so we used advanced sequence-based binding prediction. 
+              The results are based on:
+              <ul class="mb-0 mt-2">
+                <li>Amino acid binding propensities</li>
+                <li>Hydrophobic and electrostatic interactions</li>
+                <li>Structural constraints and flexibility</li>
+                <li>Statistical analysis of known HLA-peptide complexes</li>
+              </ul>
+            </div>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Session Information -->
+    <div class="session-info">
+      <div class="alert alert-info">
+        <strong>ℹ️ Session Information:</strong>
+        This custom docking session will be available for download for the next 24 hours. 
+        Please save any results you need before this time expires.
+        <br><small class="text-muted">Session ID: <%= sessionId %></small>
+      </div>
+    </div>
+  <% } %>
+
+</div>
+
+<!-- Pass data to JavaScript -->
+<script>
+// Global configuration for JavaScript
+window.dockingConfig = {
+  isCustomDocking: <%= isCustomDocking ? 'true' : 'false' %>,
+  actualDocking: <%= isCustomDocking ? (actualDocking ? 'true' : 'false') : 'true' %>,
+  <% if (isCustomDocking) { %>
+  proteinFile: '/uploads/<%= dockingData.protein.mainProteinFile %>',
+  peptideFile: '/<%= dockingData.peptidePdbPath %>',
+  complexFile: '/<%= dockingData.complexPdbPath %>',
+  peptideSequence: '<%= dockingData.peptideSequence %>',
+  logContent: <%- JSON.stringify(dockingData.logContent) %>,
+  configContent: <%- JSON.stringify(dockingData.configContent) %>
+  <% } else { %>
+  <% if (proteinPdb) { %>proteinFile: '/uploads/<%= proteinPdb.storedName %>',<% } %>
+  <% if (peptidePdb) { %>peptideFile: '/uploads/<%= peptidePdb.storedName %>',<% } %>
+  <% if (complexPdb) { %>complexFile: '/uploads/<%= complexPdb.storedName %>',<% } %>
+  <% if (peptideName) { %>peptideSequence: '<%= peptideName %>',<% } %>
+  <% if (dockingResult && dockingResult.logContent) { %>
+  logContent: <%- JSON.stringify(dockingResult.logContent) %>,
+  <% } else if (dockingResult && dockingResult.logFile) { %>
+  logFile: '/uploads/<%= dockingResult.logFile %>',
+  <% } %>
+  <% if (protein && protein.configFile) { %>
+  configFile: '/uploads/<%= protein.configFile %>'
+  <% } %>
+  <% } %>
+};
+</script>
+
+<!-- Mol* Viewer JavaScript -->
+<script type="text/javascript" src="https://www.ebi.ac.uk/pdbe/pdb-component-library/js/pdbe-molstar-plugin-3.1.0.js"></script>
+
+<!-- Custom JavaScript -->
+<script src="/js/docking-results.js?v=20260918-sequence-colors"></script>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

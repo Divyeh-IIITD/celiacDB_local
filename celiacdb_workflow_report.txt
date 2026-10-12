@@ -1,0 +1,316 @@
+CELIACDB APPLICATION WORKFLOW REPORT
+====================================
+
+1. STARTUP AND RUNTIME
+
+Entry point: app.js
+
+1. Loads environment variables with dotenv.
+2. Imports fileService, which immediately starts hourly temporary-session cleanup.
+3. Connects asynchronously to MongoDB using MONGO_URI.
+4. Configures Express body parsing, EJS views, layouts, static files, security headers, request logging, rate limiting, and upload validation.
+5. Serves public/ as static content.
+6. Serves temporary result files from temp_results/.
+7. Mounts routes/index.js at the root path.
+8. Registers health, status, admin, error-handling, and shutdown handlers.
+9. Starts the HTTP server on PORT, defaulting to 5000.
+
+Operational startup is documented in celiacdb_restart_guide.md and restart_celiacdb.sh.
+The restart guide refers to port 3000, while app.js defaults to port 5000.
+
+2. DATA INGESTION PIPELINE
+
+Primary script: scripts/addProteinFromFolder.js
+
+1. Connects to MongoDB.
+2. Recursively scans an HLA-DQ data directory.
+3. Categorizes files as main protein PDB, docked peptide PDB, complex PDB, docking log, configuration, metrics, images, or simulation files.
+4. Copies source files into public/uploads using generated stored filenames.
+5. Parses text, metric, and docking log files.
+6. Extracts peptide names from filenames.
+7. Associates each peptide with its docking structure, complex structure, and log.
+8. Parses affinity, RMSD, and mode values from docking logs.
+9. Creates a Protein document.
+10. Saves protein metadata, file metadata, and precomputed docking results to MongoDB.
+
+MongoDB stores metadata and parsed content. Structure files remain on disk under public/uploads.
+
+The schema is defined in models/Protein.js.
+
+3. PROTEIN BROWSING WORKFLOW
+
+Routes and controller: routes/index.js and controllers/proteinController.js
+
+GET /
+- Queries all proteins.
+- Renders views/index.ejs.
+- Provides links to protein browsing, precomputed docking, and custom docking.
+
+GET /hladq-proteins
+- Queries proteins from MongoDB.
+- Renders views/hladq-proteins.ejs.
+
+GET /hladq-protein/:id
+- Loads one protein by MongoDB ID.
+- Reads metric and text files from public/uploads.
+- Renders views/hladq-protein-details.ejs.
+- Displays protein files and available peptides.
+
+GET /hladq-protein/:id/download
+- Streams the main protein PDB file.
+
+GET /hladq-protein/:id/download-all-zip
+- Packages the protein files and a README into a ZIP archive.
+
+4. PRECOMPUTED DOCKING WORKFLOW
+
+Controller: controllers/dockingController.js
+
+GET /docking-analysis
+1. Loads HLADQ proteins from MongoDB.
+2. Builds a unique peptide list from stored dockingResults.
+3. Renders views/docking-form.ejs.
+
+POST /docking-analysis
+1. Receives proteinId and peptideName.
+2. Validates both values.
+3. Redirects to /docking-results/:proteinId/:peptideName.
+
+GET /docking-results/:proteinId/:peptideName
+1. Loads the protein from MongoDB.
+2. Finds the requested stored docking result.
+3. Resolves protein, peptide, complex, and log files from public/uploads.
+4. Renders the shared views/docking-results.ejs view.
+
+GET /docking-results/:proteinId/:peptideName/download-all-zip
+- Packages the protein PDB, peptide PDB, complex PDB, log, configuration, and README into a ZIP archive.
+
+No new docking calculation occurs in this workflow. It displays files and results imported earlier by the ingestion scripts.
+
+5. CUSTOM PDB DOCKING WORKFLOW
+
+Form: views/custom-docking-form.ejs
+Controller: controllers/customDockingController.js
+Service: services/dockingService.js
+
+REQUEST
+
+The browser submits multipart form data to:
+
+POST /custom-docking
+- proteinId
+- inputType=pdb
+- peptideFile
+
+UPLOAD MIDDLEWARE
+
+middleware/security.js performs:
+
+1. Rate limiting.
+2. Input sanitization.
+3. Multer upload handling.
+4. Maximum upload size enforcement: 16,000 KB.
+5. One-file and field-count limits.
+6. Filename and path traversal checks.
+7. MIME-type and extension checks.
+8. Executable and script filename rejection.
+
+The initial upload is stored in temp_uploads.
+
+CONTROLLER VALIDATION
+
+customDockingController.js then:
+
+1. Requires a valid protein ID.
+2. Requires inputType to equal pdb.
+3. Requires an uploaded file.
+4. Requires a .pdb extension.
+5. Reads the file as UTF-8.
+6. Rejects null bytes and binary content.
+7. Scans for suspicious script or injection patterns.
+8. Requires ATOM or HETATM records.
+9. Extracts amino-acid residues from the PDB structure.
+10. Validates peptide length between 3 and 50 residues.
+11. Loads the selected protein from MongoDB.
+
+SESSION CREATION
+
+A session directory is created at:
+
+temp_results/session_<timestamp>_<random>/
+
+The uploaded peptide PDB is copied into that directory.
+
+RECEPTOR PREPARATION
+
+services/dockingService.js:
+
+1. Loads the selected protein PDB from public/uploads.
+2. Cleans unsuitable protein structure content.
+3. Converts the receptor to receptor.pdbqt.
+4. Validates the generated PDBQT file.
+
+LIGAND PREPARATION
+
+1. Validates the uploaded peptide PDB.
+2. Cleans peptide records and keeps standard amino acids.
+3. Converts the peptide to ligand.pdbqt.
+4. Validates the generated PDBQT file.
+
+HLA CONFIGURATION
+
+The service maps protein names such as HLA-DQ2.2, HLA-DQ2.5, HLA-DQ8, and HLA-DQ9 to:
+
+data/HLA-DQ_Proteins/<protein>/conf.txt
+
+The configuration provides grid center, grid dimensions, thread count, search depth, and number of docking modes.
+
+AUTODOCK VINA EXECUTION
+
+1. Generates a dynamic config.conf inside the session directory.
+2. Builds the command:
+
+   vina --config "<session directory>/config.conf"
+
+3. Executes Vina with a 15-minute timeout.
+4. Writes docking.log.
+5. Verifies the docking output and log files.
+
+RESULT PROCESSING
+
+1. Extracts the best affinity and RMSD result.
+2. Converts the best PDBQT model into complex.pdb.
+3. Generates protein_clean.pdb.
+4. Reads the dynamic docking configuration.
+5. Stores log and configuration content in session data.
+6. Writes temp_results/session_<id>.json.
+7. Deletes the original temporary upload.
+8. Redirects to /custom-docking-results/:sessionId.
+
+6. CUSTOM RESULTS WORKFLOW
+
+GET /custom-docking-results/:sessionId
+
+1. Loads the session JSON file.
+2. Verifies that the session directory exists.
+3. Verifies complex.pdb and protein_clean.pdb.
+4. Checks that the original protein file still exists.
+5. Loads expiry data and warnings.
+6. Renders views/docking-results.ejs.
+
+GET /temp-results/:sessionId/:filename
+
+Serves temporary files after validating:
+
+- Session ID format.
+- Filename traversal characters.
+- Allowed extensions: .pdb, .log, .conf, .txt.
+- File existence.
+
+Private no-cache headers are added to temporary file responses.
+
+7. FRONTEND RESULTS PIPELINE
+
+View: views/docking-results.ejs
+Client script: public/js/docking-results.js
+
+1. The server injects file URLs into window.dockingConfig.
+2. The browser loads protein, peptide, and complex structures.
+3. PDBe Mol* renders the structures in three viewers.
+4. Client code normalizes missing or inconsistent chain IDs.
+5. Precomputed Vina logs are fetched or read from injected content.
+6. Affinity, RMSD, configuration, and logs are displayed.
+7. Download links are generated for available files.
+8. Mol* viewer instances are cleaned up on page navigation and unload.
+
+8. TEMPORARY STORAGE AND CLEANUP
+
+Service: services/fileService.js
+
+- Cleanup starts when fileService is imported.
+- Cleanup runs every hour.
+- Sessions older than 24 hours are deleted.
+- Both the session directory and session JSON file are removed.
+- Admin endpoints expose cleanup state and storage statistics.
+- Manual cleanup can be triggered through admin routes.
+- Shutdown handlers stop the cleanup interval.
+
+9. ADMIN AND HEALTH ENDPOINTS
+
+Important endpoints include:
+
+GET /health
+GET /status
+GET /admin/cleanup-status
+POST /admin/force-cleanup
+GET /admin/session-stats
+GET /admin/sessions
+GET /admin/storage-stats
+GET /admin/cleanup-now
+GET /admin/force-cleanup-all
+GET /admin/cleanup-config
+GET /admin/api-docs
+
+These expose service state, temporary-session counts, storage usage, cleanup information, and security configuration.
+
+10. MAINTENANCE SCRIPTS
+
+scripts/addProteinFromFolder.js
+- Imports a complete HLA-DQ dataset.
+
+scripts/addProteinWithFixedConf.js
+- Imports or fixes HLA-DQ9 configuration data.
+
+scripts/checkProteins.js
+- Inspects database contents and repairs missing proteinType values.
+
+scripts/fixProteins.js
+- Normalizes proteinType values to HLADQ.
+
+scripts/cleanupUploads.js
+- Removes upload files no longer referenced by MongoDB.
+
+scripts/deleteAllProteins.js
+- Deletes selected or all protein records depending on the active code path.
+
+11. IMPORTANT IMPLEMENTATION FINDINGS
+
+1. Custom docking routes are defined in both routes/index.js and app.js. Because indexRoutes is mounted first, the router definitions handle matching requests first.
+
+2. Health, status, and several admin routes are duplicated between routes/index.js and app.js.
+
+3. The custom docking fallback/simulation branch is unreachable because performDirectPDBDocking() currently uses if (true).
+
+4. AutoDock Vina availability detection is commented out, so the application assumes Vina exists.
+
+5. package.json has no start script.
+
+6. npm test is only a placeholder command that exits with an error.
+
+7. The restart guide documents port 3000, while app.js defaults to port 5000.
+
+8. Rate limiting is configured for 50 requests per 15 minutes, while some logs and API documentation still state 5 requests.
+
+9. /temp-results is exposed through express.static() before the more restrictive controller route. This may bypass the controller's session and filename validation for directly addressed static paths.
+
+10. Custom docking depends on external HLA configuration files under data/HLA-DQ_Proteins.
+
+11. MongoDB connection begins asynchronously, but the HTTP server starts before the connection is confirmed.
+
+12. The UI only accepts PDB files, while upload middleware also permits TXT files. The controller ultimately rejects non-PDB uploads.
+
+13. The shared docking-results view is used by both precomputed and live docking workflows.
+
+12. END-TO-END SUMMARY
+
+DATA IMPORT:
+HLA-DQ source folders -> ingestion scripts -> public/uploads + MongoDB Protein documents
+
+PRECOMPUTED USER FLOW:
+Browser -> docking form -> MongoDB lookup -> stored docking result -> shared results view -> Mol* viewers/downloads
+
+CUSTOM USER FLOW:
+Browser upload -> security middleware -> PDB validation -> session directory -> receptor/ligand PDBQT conversion -> dynamic HLA config -> AutoDock Vina -> result conversion -> session JSON -> shared results view -> Mol* viewers/downloads
+
+SESSION LIFECYCLE:
+Session creation -> temporary result files -> result display/download -> automatic cleanup after 24 hours

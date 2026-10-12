@@ -1,0 +1,97 @@
+<!-- Modal: How to Check Amino Acid Numbering (MD Analysis & PDB) -->
+<div class="modal fade" id="mdNumberingModal" tabindex="-1" aria-labelledby="mdNumberingModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="mdNumberingModalLabel">
+          <i class="fas fa-microscope me-2"></i>How to Check Amino Acid Numbering (MD Analysis & PDB)
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div class="alert alert-info d-flex align-items-center mb-4">
+          <i class="fas fa-lightbulb fa-2x me-3 text-info"></i>
+          <div>
+            <strong>Why Residue Numbering Matters in HADDOCK Restraints:</strong><br>
+            HADDOCK3 ambiguous interaction restraints (AIR) bind active residues between the receptor (chain A) and the peptide (chain B).
+            Entering incorrect residue numbers causes docking to miss the binding groove.
+          </div>
+        </div>
+
+        <h6 class="fw-bold text-primary mb-3">1. PDB File vs MD Trajectory Numbering</h6>
+        <p class="small text-muted">
+          In raw PDB files, residue numbering (columns 23-26 <code>resSeq</code>) can start from arbitrary values, include insertion codes, or differ per chain.
+          In contrast, Molecular Dynamics (MD) trajectories (GROMACS, Amber, NAMD) often index residues contiguously from 1 to $N$.
+        </p>
+
+        <div class="table-responsive mb-4">
+          <table class="table table-sm table-bordered small">
+            <thead class="table-light">
+              <tr>
+                <th>Format / Context</th>
+                <th>Receptor (HLA-DQ Chain A)</th>
+                <th>Peptide (Chain B)</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>PDB ATOM Record</strong></td>
+                <td>Columns 23-26 (e.g. 135, 165, 435)</td>
+                <td>Columns 23-26 (usually 1..N)</td>
+                <td>Always check <code>resSeq</code> column in your PDB.</td>
+              </tr>
+              <tr>
+                <td><strong>MD Trajectory (VMD / GROMACS)</strong></td>
+                <td><code>protein and resid 135</code></td>
+                <td><code>segname PEP or resid 1 to 15</code></td>
+                <td>VMD uses 0-based or 1-based index depending on representation.</td>
+              </tr>
+              <tr>
+                <td><strong>HADDOCK3 Restraint (.tbl)</strong></td>
+                <td><code>segid A and resid 135 165 435</code></td>
+                <td><code>segid B and resid 1 2 ...</code></td>
+                <td>Must match the exact <code>segid</code> and <code>resid</code> of the input structures.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h6 class="fw-bold text-primary mb-3">2. How to Check Residue Numbers Using PyMOL</h6>
+        <div class="bg-dark text-light p-3 rounded-3 mb-4 font-monospace small">
+          <span class="text-secondary"># Load receptor or complex in PyMOL</span><br>
+          <span class="text-warning">load</span> dq2_2_ed_nm.pdb, receptor<br><br>
+          <span class="text-secondary"># View sequence and residue numbers directly in PyMOL</span><br>
+          <span class="text-warning">set</span> seq_view, 1<br><br>
+          <span class="text-secondary"># Highlight and display active pocket residues</span><br>
+          <span class="text-warning">select</span> binding_pocket, chain A and resi 135+165+435<br>
+          <span class="text-warning">show</span> sticks, binding_pocket<br>
+          <span class="text-warning">label</span> binding_pocket and name CA, "%s%s" % (resn, resi)
+        </div>
+
+        <h6 class="fw-bold text-primary mb-3">3. Checking with MD Trajectory Analysis (VMD / Python MDAnalysis)</h6>
+        <div class="bg-dark text-light p-3 rounded-3 mb-4 font-monospace small">
+          <span class="text-secondary"># Python MDAnalysis example</span><br>
+          <span class="text-info">import</span> MDAnalysis <span class="text-info">as</span> mda<br>
+          u = mda.Universe(<span class="text-success">"topology.pdb"</span>, <span class="text-success">"trajectory.xtc"</span>)<br>
+          contacts = u.select_atoms(<span class="text-success">"protein and around 4.5 segid B"</span>)<br>
+          print(<span class="text-success">"Contact residue numbers:"</span>, set(contacts.resids))
+        </div>
+
+        <h6 class="fw-bold text-primary mb-3">4. Recommended Active Residues for HLA-DQ Alleles</h6>
+        <p class="small text-muted mb-2">
+          If you are unsure of specific MD contacts, select <strong>"Use Default Pocket Restraints"</strong>.
+          The default pocket residues below target the canonical gluten peptide binding groove:
+        </p>
+        <ul class="small text-muted">
+          <li><strong>HLA-DQ2.2:</strong> Residues <code>135, 165, 435</code> (Groove anchoring positions)</li>
+          <li><strong>HLA-DQ2.5:</strong> Residues <code>135, 165, 435</code> (P4, P6, P7/P9 binding pockets)</li>
+          <li><strong>Peptide Restraints:</strong> In de novo docking, the <strong>entire peptide sequence (1 to N)</strong> should be designated as active to allow flexible conformer sampling across the full groove.</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,229 @@
+/* Reset & Base */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f2f4f8;
+  color: #2c3e50;
+  line-height: 1.6;
+  font-size: 16px;
+  padding: 20px; /* Add space around the whole page */
+}
+
+a {
+  color: #2980b9;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Header */
+header {
+  background-color: #1f2d3d;
+  color: #ffffff;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+header h1 {
+  font-size: 28px;
+  margin-bottom: 5px;
+}
+
+header p {
+  font-size: 14px;
+  color: #d0d6dc;
+}
+
+/* Main Layout */
+main {
+  max-width: 1000px;
+  margin: 40px auto;
+  padding: 30px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+/* Forms */
+form label {
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: block;
+}
+
+form input,
+form select,
+form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 20px;
+  border: 1px solid #dcdfe3;
+  border-radius: 4px;
+  background-color: #fafbfc;
+  transition: border-color 0.3s;
+}
+
+form input:focus,
+form select:focus,
+form textarea:focus {
+  border-color: #2980b9;
+  outline: none;
+}
+
+form button {
+  background-color: #2980b9;
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+form button:hover {
+  background-color: #1c6690;
+}
+
+/* Protein Viewer */
+#viewer {
+  width: 100%;
+  height: 400px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+/* Dropdown form */
+.protein-select-form {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.protein-select-form select {
+  flex: 1;
+}
+
+/* Protein Analysis */
+.analysis-text {
+  white-space: pre-wrap;
+  background-color: #f6f8fa;
+  padding: 20px;
+  border-left: 5px solid #2980b9;
+  border-radius: 4px;
+  font-family: Consolas, monospace;
+  margin-top: 30px;
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  padding: 20px;
+  color: #999;
+  font-size: 14px;
+  margin-top: 40px;
+}
+
+
+/* Protein Details Page Layout */
+.details-container {
+  display: flex;
+  gap: 40px;
+  margin-top: 30px;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+/* Box for the 3D viewer */
+.viewer-box {
+  flex: 1;
+  min-width: 320px;
+  max-width: 500px;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  background-color: #ffffff;
+  overflow: hidden; /* Prevents overflow */
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.viewer-box #viewer {
+  width: 100%;
+  height: 400px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background-color: #f7f9fc; /* Light background for the viewer */
+  position: relative;  /* Ensure it's positioned inside the box */
+}
+
+/* Info Box for analysis */
+.info-box {
+  flex: 1;
+  min-width: 500px;
+  /* max-width: 500px; */
+  padding: 20px;
+  border-radius: 12px;
+  background-color: #ffffff;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.info-box h3 {
+  margin-bottom: 15px;
+  font-size: 20px;
+  color: #2c3e50;
+}
+
+.info-box .analysis-text {
+  background-color: #f6f8fa;
+  padding: 15px;
+  border-left: 4px solid #3498db;
+  border-radius: 5px;
+  font-family: Consolas, monospace;
+  white-space: pre-wrap;
+  font-size: 15px;
+}
+
+/* Flexbox for neat alignment */
+.viewer-section {
+  flex: 1;
+  min-width: 320px;
+  max-width: 50%;
+}
+
+.info-section {
+  flex: 1;
+  min-width: 320px;
+  max-width: 50%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Centering Content in the Page */
+main {
+  max-width: 1100px;
+  margin: 40px auto;
+  padding: 40px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+  font-size: 24px;
+  color: #34495e;
+  margin-bottom: 20px;
+  text-align: center;
+}

@@ -1,0 +1,8 @@
+! Replace every placeholder with residue numbers from the prepared PDB files.
+! REC = HLA-DQ receptor chain; PEP = peptide chain.
+! Do not use guessed residues for the final run.
+
+! Example ambiguous interaction restraint format:
+! assign (segid REC and resid REC_ACTIVE_1)
+!        (segid PEP and resid PEP_ACTIVE_1)
+!        2.0 2.0 0.0

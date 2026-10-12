@@ -1,0 +1,18 @@
+! ====================================================================
+! HADDOCK Ambiguous Interaction Restraints (AIR)
+! Target Receptor: segid A (Active residues: 3)
+! Target Peptide:  segid B (Active residues: 6)
+! Format: CNS distance restraint (lower=2.0A, upper=2.0A, dminus=0.0A)
+! ====================================================================
+
+assign (segid A and resid 135)
+       (segid B and (resid 1 or resid 2 or resid 3 or resid 4 or resid 5 or resid 6))
+       2.0 2.0 0.0
+
+assign (segid A and resid 165)
+       (segid B and (resid 1 or resid 2 or resid 3 or resid 4 or resid 5 or resid 6))
+       2.0 2.0 0.0
+
+assign (segid A and resid 435)
+       (segid B and (resid 1 or resid 2 or resid 3 or resid 4 or resid 5 or resid 6))
+       2.0 2.0 0.0

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Celiac DB</title>
+    <link rel="stylesheet" href="/css/index.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="hero-title">HLA-DQ Protein Analysis Platform</h1>
+                <p class="hero-subtitle">Molecular docking and analysis tools for research</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Analysis Options -->
+            <section class="analysis-section">
+                <div class="section-header">
+                    <h2>Choose Your Analysis</h2>
+                    <p>Select from our comprehensive suite of molecular analysis tools</p>
+                </div>
+
+                <div class="options-grid">
+                    <!-- Option 1: View Proteins -->
+                    <div class="option-card ready-card">
+                        <div class="ready-badge">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Ready to Use</span>
+                        </div>
+                        <div class="card-header">
+                            <div class="card-icon ready-icon">
+                                <i class="fas fa-microscope"></i>
+                            </div>
+                            <h3>Protein Browser</h3>
+                        </div>
+                        <p>Explore our curated collection of HLA-DQ proteins with detailed structural analysis and
+                            downloadable data</p>
+                        <div class="card-features">
+                            <span class="feature-tag">
+                                <i class="fas fa-chart-bar"></i>
+                                Protein Analysis
+                            </span>
+                            <span class="feature-tag">
+                                <i class="fas fa-download"></i>
+                                File Downloads
+                            </span>
+                            <span class="feature-tag">
+                                <i class="fas fa-cube"></i>
+                                3D Visualization
+                            </span>
+                        </div>
+                        <a href="/hladq-proteins" class="btn btn-success">
+                            <div class="btn-content">
+                                <span class="btn-text">Browse Proteins</span>
+                                <i class="fas fa-arrow-right btn-icon"></i>
+                            </div>
+                        </a>
+                    </div>
+
+                    <!-- Option 2: Docking Analysis -->
+                    <div class="option-card ready-card">
+                        <div class="ready-badge">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Ready to Use</span>
+                        </div>
+                        <div class="card-header">
+                            <div class="card-icon ready-icon">
+                                <i class="fas fa-bullseye"></i>
+                            </div>
+                            <h3>Docking Analysis</h3>
+                        </div>
+                        <p>Access pre-computed docking results with interactive 3D structures and comprehensive binding
+                            scores</p>
+                        <div class="card-features">
+                            <span class="feature-tag">
+                                <i class="fas fa-database"></i>
+                                8 × 38 Pre-computed Results
+                            </span>
+                            <span class="feature-tag">
+                                <i class="fas fa-eye"></i>
+                                3D Structure Viewing
+                            </span>
+                            <span class="feature-tag">
+                                <i class="fas fa-calculator"></i>
+                                Binding Scores
+                            </span>
+                        </div>
+                        <a href="/docking-analysis" class="btn btn-success">
+                            <div class="btn-content">
+                                <span class="btn-text">Analyze Docking</span>
+                                <i class="fas fa-arrow-right btn-icon"></i>
+                            </div>
+                        </a>
+                    </div>
+
+                    <!-- Option 3: Custom Docking & Peptide Prep -->
+                    <div class="option-card ready-card">
+                        <div class="ready-badge">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Vina & HADDOCK3</span>
+                        </div>
+                        <div class="card-header">
+                            <div class="card-icon ready-icon">
+                                <i class="fas fa-rocket"></i>
+                            </div>
+                            <h3>Custom Docking & Prep</h3>
+                        </div>
+                        <p>Perform real-time docking with custom peptide PDBs or prepare 3D conformations (Helix, Sheet, PPII, Ensemble) from sequence with PyMOL.</p>
+                        <div class="card-features">
+                            <span class="feature-tag">
+                                <i class="fas fa-cubes"></i>
+                                Vina & HADDOCK3
+                            </span>
+                            <span class="feature-tag">
+                                <i class="fas fa-dna"></i>
+                                PyMOL Prep
+                            </span>
+                            <span class="feature-tag">
+                                <i class="fas fa-crosshairs"></i>
+                                AIR Restraints
+                            </span>
+                            <span class="feature-tag">
+                                <i class="fas fa-layer-group"></i>
+                                Ensemble PDB
+                            </span>
+                        </div>
+                        <div class="d-flex flex-column gap-2">
+                            <a href="/custom-docking" class="btn btn-success">
+                                <div class="btn-content">
+                                    <span class="btn-text">🚀 Launch Custom Docking</span>
+                                    <i class="fas fa-arrow-right btn-icon"></i>
+                                </div>
+                            </a>
+                            <a href="/custom-docking/peptide-prep" class="btn btn-outline-primary" style="border-radius: 25px; padding: 10px 20px; font-weight: 600; text-decoration: none; text-align: center;">
+                                <i class="fas fa-magic me-2"></i> Prepare Peptide from Sequence
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- Platform Features -->
+            <section class="features-section">
+                <div class="section-header">
+                    <h2>Platform Capabilities</h2>
+                    <p>Advanced molecular analysis tools powered by cutting-edge algorithms</p>
+                </div>
+
+                <div class="features-grid">
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-atom"></i>
+                        </div>
+                        <h4>AutoDock Vina Integration</h4>
+                        <p>Industry-standard molecular docking with precise binding affinity predictions</p>
+                    </div>
+
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h4>HLA-DQ Specialization</h4>
+                        <p>Curated database of 8 exclusive HLA-DQ protein structures for immunology research</p>
+                    </div>
+
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-vr-cardboard"></i>
+                        </div>
+                        <h4>Interactive Visualization</h4>
+                        <p>Mol* viewer integration for immersive 3D molecular structure exploration</p>
+                    </div>
+
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h4>Comprehensive Analytics</h4>
+                        <p>Detailed binding scores, RMSD values, and molecular configuration analysis</p>
+                    </div>
+
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-tachometer-alt"></i>
+                        </div>
+                        <h4>Real-time Processing</h4>
+                        <p>High-performance computing for instant molecular docking calculations</p>
+                    </div>
+
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-file-export"></i>
+                        </div>
+                        <h4>Export & Integration</h4>
+                        <p>Download PDB structures, analysis reports, and integrate with external tools</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- How It Works -->
+            <section class="workflow-section">
+                <div class="section-header">
+                    <h2>How It Works</h2>
+                    <p>Simple three-step process for advanced molecular analysis</p>
+                </div>
+
+                <div class="workflow-steps">
+                    <div class="step">
+                        <div class="step-icon">
+                            <span class="step-number">1</span>
+                        </div>
+                        <div class="step-content">
+                            <h4>Select Analysis Type</h4>
+                            <p>Choose from protein browsing, pre-computed docking analysis, or custom molecular docking
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="step-connector"></div>
+
+                    <div class="step">
+                        <div class="step-icon">
+                            <span class="step-number">2</span>
+                        </div>
+                        <div class="step-content">
+                            <h4>Configure Parameters</h4>
+                            <p>Select your HLA-DQ protein target and input peptide sequences for analysis</p>
+                        </div>
+                    </div>
+
+                    <div class="step-connector"></div>
+
+                    <div class="step">
+                        <div class="step-icon">
+                            <span class="step-number">3</span>
+                        </div>
+                        <div class="step-content">
+                            <h4>Analyze & Export</h4>
+                            <p>Explore interactive 3D structures, review binding scores, and download results</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Research Notice -->
+            <section class="notice-section">
+                <div class="notice-card">
+                    <div class="notice-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div class="notice-content">
+                        <h4>Research Platform Notice</h4>
+                        <p>This platform is designed for academic and research purposes. All computational predictions
+                            should be validated through experimental methods before clinical applications.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="/js/index.js?v=20250923"></script>
+</body>
+
+</html>

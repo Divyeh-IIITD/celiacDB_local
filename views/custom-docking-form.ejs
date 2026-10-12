@@ -1,0 +1,576 @@
+<!-- Bootstrap -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+<!-- Custom CSS -->
+<link rel="stylesheet" href="/css/custom-docking-form.css">
+
+<div class="container">
+  <!-- Header Section -->
+  <div class="header-section">
+    <h2>🧬 Custom Peptide Docking</h2>
+    <p>Select an HLA-DQ protein and upload your peptide PDB file or prepare one from sequence for molecular docking analysis.</p>
+    <a href="/" class="btn btn-secondary mb-3">← Back to Home</a>
+  </div>
+
+  <!-- Navigation Tabs under Custom Docking -->
+  <div class="d-flex justify-content-center mb-4">
+    <div class="nav nav-pills p-1 bg-white rounded-pill shadow-sm border">
+      <a href="/custom-docking" class="nav-link rounded-pill active px-4 py-2" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; font-weight: 600;">
+        <i class="fas fa-bullseye me-2"></i> 1. Direct Docking
+      </a>
+      <a href="/custom-docking/peptide-prep" class="nav-link rounded-pill text-secondary px-4 py-2" style="font-weight: 600;">
+        <i class="fas fa-dna me-2 text-primary"></i> 2. Peptide Prep (PyMOL Ensemble)
+      </a>
+    </div>
+  </div>
+
+  <!-- Direct Docking & Peptide Prep Callout -->
+  <div class="alert alert-info" role="alert">
+    <div class="text-center">
+      <h4 class="alert-heading mb-3">
+        <i class="fas fa-lightbulb me-2"></i>
+        <strong>📁 Direct PDB File Docking</strong>
+      </h4>
+      <p class="mb-3">
+        Upload your pre-modeled peptide PDB structure, or generate starting 3D conformations (Helix, Sheet, PPII, Ensemble) directly from sequence using our PyMOL preparation tool.
+      </p>
+      <div class="d-flex justify-content-center gap-2 flex-wrap">
+        <a href="/custom-docking/peptide-prep" class="btn btn-primary btn-lg">
+          <i class="fas fa-dna me-2"></i>
+          Prepare Peptide from Sequence (PyMOL)
+        </a>
+        <button type="button" class="btn btn-outline-info btn-lg" data-bs-toggle="modal"
+          data-bs-target="#pdbInstructions">
+          <i class="fas fa-question-circle me-2"></i>
+          PDB File Requirements
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Docking Form -->
+  <div class="form-section">
+    <div class="card">
+      <div class="card-header">
+        <h4>🎯 Perform Direct PDB Docking</h4>
+      </div>
+      <div class="card-body">
+        <form id="customDockingForm" action="/custom-docking" method="POST" enctype="multipart/form-data">
+
+          <!-- Docking Engine Selection -->
+          <div class="form-group mb-4">
+            <label class="form-label">
+              <strong>1. Select Docking Engine</strong>
+            </label>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="form-check p-3 border rounded-3 bg-white shadow-sm">
+                  <input class="form-check-input" type="radio" name="engine" id="engineVina" value="vina" checked onchange="toggleEngineSelection()">
+                  <label class="form-check-label fw-bold text-dark" for="engineVina">
+                    ⚡ AutoDock Vina
+                  </label>
+                  <div class="text-muted small mt-1">Grid-based fast docking across the HLA-DQ binding groove.</div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check p-3 border rounded-3 bg-white shadow-sm">
+                  <input class="form-check-input" type="radio" name="engine" id="engineHaddock" value="haddock3" onchange="toggleEngineSelection()">
+                  <label class="form-check-label fw-bold text-primary" for="engineHaddock">
+                    🔬 HADDOCK3 (Restraint-Driven)
+                  </label>
+                  <div class="text-muted small mt-1">Information-driven flexible docking using ambiguous interaction restraints (AIR).</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- HLA-DQ Protein Selection -->
+          <div class="form-group mb-4">
+            <label for="proteinSelect" class="form-label">
+              <strong>2. Select HLA-DQ Protein</strong>
+            </label>
+            <select class="form-select" id="proteinSelect" name="proteinId" required onchange="onProteinChange()">
+              <option value="">Choose a protein...</option>
+              <% proteins.forEach(protein=> { %>
+                <option value="<%= protein._id %>" data-name="<%= protein.name %>">
+                  <%= protein.name %>
+                </option>
+                <% }) %>
+            </select>
+            <div class="form-text">Choose the receptor protein for docking analysis.</div>
+          </div>
+
+          <!-- PDB File Upload Section -->
+          <div class="form-group mb-4">
+            <label for="peptideFile" class="form-label">
+              <strong>3. Peptide Structure Input</strong>
+            </label>
+
+            <% if (typeof preparedData !== 'undefined' && preparedData) { %>
+              <div class="alert alert-success border-success p-3 mb-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div class="d-flex align-items-center">
+                  <i class="fas fa-check-circle text-success fa-2x me-3"></i>
+                  <div>
+                    <h6 class="mb-1 text-success fw-bold">Pre-Generated PyMOL Ensemble Loaded</h6>
+                    <div class="small text-muted">
+                      Sequence: <code><%= preparedData.sequence || 'Gluten Epitope' %></code> | Multi-model ensemble <code>peptide_ens.pdb</code> ready to dock!
+                    </div>
+                  </div>
+                </div>
+                <span class="badge bg-success px-3 py-2">Session Active</span>
+              </div>
+              <input type="hidden" name="prepSessionId" id="prepSessionId" value="<%= preparedData.sessionId %>">
+              <p class="small text-muted mb-2">To use a different file instead, select one below (overrides pre-loaded ensemble):</p>
+            <% } else { %>
+              <div class="alert alert-light border p-3 mb-3 rounded-3">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                  <div class="d-flex align-items-center">
+                    <i class="fas fa-dna text-primary fa-2x me-3"></i>
+                    <div>
+                      <div class="fw-bold text-dark">Don't have a 3D PDB structure yet?</div>
+                      <div class="small text-muted">Generate Helix, Sheet, PPII conformers and a multi-model ensemble PDB directly from sequence with PyMOL.</div>
+                    </div>
+                  </div>
+                  <a href="/custom-docking/peptide-prep" class="btn btn-outline-primary btn-sm fw-bold">
+                    <i class="fas fa-magic me-1"></i> Open Peptide Prep Tool →
+                  </a>
+                </div>
+              </div>
+            <% } %>
+
+            <div class="mb-3">
+              <label for="libraryFile" class="form-label fw-bold">Use a prepared HADDOCK peptide</label>
+              <select class="form-select" id="libraryFile" name="libraryFile" onchange="onLibraryPeptideChange()">
+                <option value="">Choose a prepared peptide structure...</option>
+                <% peptideLibrary.forEach(peptide => { %>
+                  <optgroup label="<%= peptide.proteinName %> — <%= peptide.peptideName %>" data-protein-id="<%= peptide.proteinId %>">
+                    <option value="<%= peptide.conformations.ensemble %>" 
+                            data-protein-id="<%= peptide.proteinId %>" 
+                            data-protein-name="<%= peptide.proteinName %>" 
+                            data-peptide-name="<%= peptide.peptideName %>" 
+                            data-conformation="Ensemble">
+                      <%= peptide.peptideName %> — Ensemble
+                    </option>
+                    <option value="<%= peptide.conformations.helix %>" 
+                            data-protein-id="<%= peptide.proteinId %>" 
+                            data-protein-name="<%= peptide.proteinName %>" 
+                            data-peptide-name="<%= peptide.peptideName %>" 
+                            data-conformation="Helix">
+                      <%= peptide.peptideName %> — Helix
+                    </option>
+                    <option value="<%= peptide.conformations.ppii %>" 
+                            data-protein-id="<%= peptide.proteinId %>" 
+                            data-protein-name="<%= peptide.proteinName %>" 
+                            data-peptide-name="<%= peptide.peptideName %>" 
+                            data-conformation="PPII">
+                      <%= peptide.peptideName %> — PPII
+                    </option>
+                    <option value="<%= peptide.conformations.sheet %>" 
+                            data-protein-id="<%= peptide.proteinId %>" 
+                            data-protein-name="<%= peptide.proteinName %>" 
+                            data-peptide-name="<%= peptide.peptideName %>" 
+                            data-conformation="Sheet">
+                      <%= peptide.peptideName %> — Sheet
+                    </option>
+                  </optgroup>
+                <% }) %>
+              </select>
+              <div class="form-text">Select one of the final prepared HADDOCK structures. Choose the matching HLA-DQ protein above.</div>
+            </div>
+
+            <div class="text-center text-muted small mb-3">— or upload another PDB file —</div>
+            <input type="file" class="form-control" id="peptideFile" name="peptideFile" accept=".pdb" <%= (typeof preparedData !== 'undefined' && preparedData) ? '' : '' %>>
+            <div class="form-text">
+              <strong>Supported format:</strong>
+              <ul class="mb-0 mt-2">
+                <li><strong>.pdb:</strong> Protein Data Bank format with 3D coordinates</li>
+              </ul>
+              <div class="mt-2">
+                <strong>Requirements:</strong>
+                <ul class="mb-0">
+                  <li>Valid PDB format with ATOM records (single model or multi-model ensemble)</li>
+                  <li>3D coordinates for all atoms</li>
+                  <li>Peptide length: 3-50 residues</li>
+                  <li>Max file size: 16MB</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- File validation preview -->
+            <div id="fileValidationPreview" class="mt-2" style="display: none;">
+              <div class="alert alert-info">
+                <div class="d-flex align-items-center">
+                  <div class="spinner-border spinner-border-sm me-2" role="status">
+                    <span class="visually-hidden">Validating...</span>
+                  </div>
+                  <span>Validating file...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Custom Config File Upload Section (Optional) -->
+          <div class="form-group mb-4">
+            <label for="configFile" class="form-label">
+              <strong>4. Upload Custom Config File (Optional)</strong>
+            </label>
+            <input type="file" class="form-control" id="configFile" name="configFile" accept=".conf,.txt,.cfg">
+            <div class="form-text">
+              Upload your own custom configuration file (<code>.conf</code>, <code>.txt</code>).
+              <strong>Leave empty to use the default HLA configuration</strong>.
+            </div>
+          </div>
+
+          <!-- Active Residues for Restraints Section -->
+          <div class="form-group mb-4 p-3 border rounded-3 bg-light" id="restraintsSection">
+            <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+              <label class="form-label fw-bold mb-0">
+                🎯 5. Active Residues for Restraints
+              </label>
+              <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#mdNumberingModal">
+                <i class="fas fa-question-circle me-1"></i> How to Check Numbering (MD Analysis)
+              </button>
+            </div>
+            <p class="small text-muted mb-3">Define active interface residues for ambiguous interaction restraints (AIR), or leave defaults.</p>
+
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label for="receptorActiveResidues" class="form-label small fw-bold">Receptor Active Residues (Chain A):</label>
+                <input type="text" class="form-control" id="receptorActiveResidues" name="receptorActiveResidues" placeholder="e.g. 135, 165, 435" value="135, 165, 435">
+                <div class="form-check mt-2">
+                  <input class="form-check-input" type="checkbox" id="defaultReceptorCheck" checked onchange="toggleDefaultReceptor()">
+                  <label class="form-check-label small text-muted" for="defaultReceptorCheck">
+                    Stay default (HLA binding pocket: 135, 165, 435)
+                  </label>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label for="peptideActiveResidues" class="form-label small fw-bold">Peptide Active Residues (Chain B):</label>
+                <input type="text" class="form-control" id="peptideActiveResidues" name="peptideActiveResidues" placeholder="e.g. 1-15 or 1,2,3..." value="all">
+                <div class="form-check mt-2">
+                  <input class="form-check-input" type="checkbox" id="defaultPeptideCheck" checked onchange="toggleDefaultPeptide()">
+                  <label class="form-check-label small text-muted" for="defaultPeptideCheck">
+                    Stay default (Whole sequence: all)
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hidden input to specify input type -->
+          <input type="hidden" name="inputType" value="pdb">
+          <input type="hidden" name="progressSessionId" id="progressSessionId" value="">
+
+          <!-- Submit Button -->
+          <div class="form-group">
+            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+              🚀 Perform Direct Docking
+            </button>
+            <div class="mt-2">
+              <small class="text-muted" id="estimateTimeText">
+                ⏱️ AutoDock Vina: 1-5 minutes | HADDOCK3: 2-5 minutes
+              </small>
+            </div>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress Modal -->
+  <div class="modal fade" id="progressModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static"
+    data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">🔬 Performing Direct PDB Docking</h5>
+        </div>
+        <div class="modal-body text-center">
+          <div class="spinner-border text-primary mb-3" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <h6 id="progressText">Initializing direct docking process...</h6>
+          <div class="d-flex justify-content-between align-items-center mt-2">
+            <small class="text-muted" id="progressDetail">Preparing your submission...</small>
+            <strong id="progressPercent">0%</strong>
+          </div>
+          <div class="progress mt-3">
+            <div id="dockingProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%">
+            </div>
+          </div>
+          <div id="dockingStageList" class="list-group list-group-flush text-start mt-3">
+            <div class="list-group-item px-0 py-2" data-stage="validate"><span class="stage-icon">○</span> Validate PDB and restraints</div>
+            <div class="list-group-item px-0 py-2" data-stage="topoaa"><span class="stage-icon">○</span> Generate molecular topology</div>
+            <div class="list-group-item px-0 py-2" data-stage="rigidbody"><span class="stage-icon">○</span> Run rigid-body docking</div>
+            <div class="list-group-item px-0 py-2" data-stage="flexref"><span class="stage-icon">○</span> Run flexible refinement</div>
+            <div class="list-group-item px-0 py-2" data-stage="emref"><span class="stage-icon">○</span> Run energy minimization</div>
+            <div class="list-group-item px-0 py-2" data-stage="cluster"><span class="stage-icon">○</span> Cluster and select top models</div>
+          </div>
+          <div class="mt-3">
+            <small class="text-muted">The status below reflects the current docking stage. The final result page opens when HADDOCK finishes.</small>
+          </div>
+          <!-- Cancel Button -->
+          <div class="mt-3">
+            <button type="button" class="btn btn-outline-secondary" onclick="cancelDocking()">
+              ❌ Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PDB Instructions Modal -->
+  <div class="modal fade" id="pdbInstructions" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <!-- <h5 class="modal-title">
+            <i class="fas fa-book me-2"></i>
+            PDB File Requirements & Guidelines
+          </h5> -->
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="steps-container">
+            <div class="step-item mb-4">
+              <div class="step-number">1</div>
+              <div class="step-content">
+                <h6>Valid PDB Format</h6>
+                <p>Your PDB file must contain valid ATOM records with 3D coordinates. Example format:</p>
+                <code>ATOM      1  N   ALA A   1      20.154  16.967  23.421  1.00 20.00           N</code>
+              </div>
+            </div>
+
+            <div class="step-item mb-4">
+              <div class="step-number">2</div>
+              <div class="step-content">
+                <h6>3D Structure Required</h6>
+                <p>The PDB file must contain complete 3D coordinates for all atoms in your peptide structure. Files with
+                  only sequence information will be rejected.</p>
+              </div>
+            </div>
+
+            <div class="step-item mb-4">
+              <div class="step-number">3</div>
+              <div class="step-content">
+                <h6>Peptide Length</h6>
+                <p>Peptides should be between 3-50 amino acid residues. Longer sequences may cause processing delays or
+                  failures.</p>
+              </div>
+            </div>
+
+            <div class="step-item mb-4">
+              <div class="step-number">4</div>
+              <div class="step-content">
+                <h6>File Size Limit</h6>
+                <p>Maximum file size is 16MB. Most peptide PDB files are much smaller (typically under 1MB).</p>
+              </div>
+            </div>
+
+            <div class="step-item">
+              <div class="step-number">5</div>
+              <div class="step-content">
+                <h6>Getting PDB Files</h6>
+                <p>You can obtain PDB files from:</p>
+                <ul>
+                  <li>PepFold4 web server (recommended)</li>
+                  <li>ChimeraX or PyMOL modeling</li>
+                  <li>Other protein structure prediction tools</li>
+                  <li>Experimental structures from PDB database</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <a href="https://bioserv.rpbs.univ-paris-diderot.fr/services/PEP-FOLD4/" target="_blank" class="btn btn-info">
+            <i class="fas fa-external-link-alt me-2"></i>
+            Go to PepFold4
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Information Section -->
+  <div class="info-section mt-5">
+    <div class="row">
+      <div class="col-md-6">
+        <div class="info-card">
+          <h5>📋 How Direct PDB Docking Works</h5>
+          <ol>
+            <li><strong>Protein Selection:</strong> Choose your target HLA-DQ protein</li>
+            <li><strong>PDB Upload:</strong> Upload pre-modeled peptide PDB structure</li>
+            <li><strong>Structure Validation:</strong> Verify PDB format and coordinates</li>
+            <li><strong>Direct Docking:</strong> Perform molecular docking with AutoDock Vina</li>
+            <li><strong>Results:</strong> View 3D structures and binding scores</li>
+          </ol>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="info-card">
+          <h5>💡 Tips for Best Results</h5>
+          <ul>
+            <li>Use high-quality PDB structures with good geometry</li>
+            <li>Ensure your PDB contains only the peptide of interest</li>
+            <li>Remove any water molecules or other ligands</li>
+            <li>Verify that all atoms have 3D coordinates</li>
+            <li>Use peptides between 5-30 amino acids for optimal performance</li>
+            <li><strong>Recommended:</strong> Generate PDB using PepFold4 for best accuracy</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MD Numbering Modal Guide -->
+<%- include('partials/md-numbering-modal') %>
+
+<!-- Pass data to JavaScript - Bulletproof version -->
+<!-- Store data in a hidden element's data attribute -->
+<div id="proteins-data"
+  data-proteins="<%- encodeURIComponent(JSON.stringify((proteins && Array.isArray(proteins) && proteins.length > 0) ? proteins : [])) %>"
+  style="display: none;">
+</div>
+
+<script>
+  // Initialize configuration safely
+  window.customDockingConfig = {
+    proteins: [],
+    maxFileSize: 16 * 1024 * 1024, // 16MB
+    supportedFormats: ['.pdb']
+  };
+
+  // Helper functions for engine and restraints toggles
+  function toggleEngineSelection() {
+    const isHaddock = document.getElementById("engineHaddock").checked;
+    const estimate = document.getElementById("estimateTimeText");
+    const restraintsSection = document.getElementById("restraintsSection");
+    if (isHaddock) {
+      estimate.textContent = "⏱️ HADDOCK3 restraint-driven docking: 2-5 minutes";
+      restraintsSection.style.border = "2px solid #667eea";
+    } else {
+      estimate.textContent = "⏱️ AutoDock Vina direct docking: 1-5 minutes | Simulation: 5-15 seconds";
+      restraintsSection.style.border = "1px solid #dee2e6";
+    }
+  }
+
+  function toggleDefaultReceptor() {
+    const check = document.getElementById("defaultReceptorCheck");
+    const input = document.getElementById("receptorActiveResidues");
+    if (check.checked) {
+      input.value = "135, 165, 435";
+      input.readOnly = true;
+    } else {
+      input.readOnly = false;
+    }
+  }
+
+  function toggleDefaultPeptide() {
+    const check = document.getElementById("defaultPeptideCheck");
+    const input = document.getElementById("peptideActiveResidues");
+    if (check.checked) {
+      input.value = "all";
+      input.readOnly = true;
+    } else {
+      input.value = "";
+      input.readOnly = false;
+      input.placeholder = "e.g. 1-15 or 1,2,3...";
+    }
+  }
+
+  function onProteinChange() {
+    const proteinId = document.getElementById("proteinSelect").value;
+    const librarySelect = document.getElementById("libraryFile");
+    const preview = document.getElementById("fileValidationPreview");
+
+    Array.from(librarySelect.options).forEach((option) => {
+      if (!option.value) {
+        option.hidden = false;
+        return;
+      }
+      option.hidden = proteinId ? (option.dataset.proteinId !== proteinId) : false;
+    });
+
+    const selectedOption = librarySelect.selectedOptions[0];
+    if (selectedOption && selectedOption.hidden) {
+      librarySelect.value = "";
+      if (preview && preview.dataset.source === "library") {
+        preview.style.display = "none";
+        preview.innerHTML = "";
+      }
+    } else if (selectedOption && selectedOption.value) {
+      if (window.showLibraryValidationPreview) {
+        window.showLibraryValidationPreview(selectedOption);
+      }
+    }
+
+    if (document.getElementById("defaultReceptorCheck").checked) {
+      document.getElementById("receptorActiveResidues").value = "135, 165, 435";
+    }
+  }
+
+  function onLibraryPeptideChange() {
+    const librarySelect = document.getElementById("libraryFile");
+    const fileInput = document.getElementById("peptideFile");
+    const preview = document.getElementById("fileValidationPreview");
+
+    if (librarySelect.value) {
+      fileInput.required = false;
+      fileInput.value = ""; // Clear uploaded file
+
+      const selectedOption = librarySelect.selectedOptions[0];
+      if (selectedOption && selectedOption.dataset) {
+        // Auto-select matching protein if not yet selected or mismatched
+        const targetProteinId = selectedOption.dataset.proteinId;
+        const proteinSelect = document.getElementById("proteinSelect");
+        if (targetProteinId && proteinSelect && proteinSelect.value !== targetProteinId) {
+          proteinSelect.value = targetProteinId;
+          onProteinChange();
+        }
+
+        // Trigger visual validation display
+        if (window.showLibraryValidationPreview) {
+          window.showLibraryValidationPreview(selectedOption);
+        }
+      }
+    } else {
+      const prepSessionInput = document.getElementById("prepSessionId");
+      fileInput.required = !(prepSessionInput && prepSessionInput.value);
+      if (preview && preview.dataset.source === "library") {
+        preview.style.display = "none";
+        preview.innerHTML = "";
+      }
+    }
+  }
+
+  // Load proteins data from data attribute
+  try {
+    var dataElement = document.getElementById('proteins-data');
+    if (dataElement) {
+      var encodedData = dataElement.getAttribute('data-proteins');
+      if (encodedData) {
+        var decodedData = decodeURIComponent(encodedData);
+        var proteinsArray = JSON.parse(decodedData);
+        if (Array.isArray(proteinsArray)) {
+          window.customDockingConfig.proteins = proteinsArray;
+          console.log('Successfully loaded', proteinsArray.length, 'proteins');
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Error loading proteins data:', e);
+  }
+</script>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Custom JavaScript -->
+<script src="/js/custom-docking-form.js?v=20261009_v4"></script>
