@@ -7,6 +7,12 @@ const util = require("util");
 const execAsync = util.promisify(exec);
 const restraintsService = require("./restraintsService");
 
+const STANDARD_AMINO_ACIDS = new Set([
+  "ALA", "ARG", "ASN", "ASP", "CYS", "GLN", "GLU", "GLY", "HIS",
+  "ILE", "LEU", "LYS", "MET", "PHE", "PRO", "SER", "THR", "TRP",
+  "TYR", "VAL", "HID", "HIE", "HIP", "CYX", "MSE",
+]);
+
 class Haddock3Service {
   constructor() {
     this.haddockCommand = null;
@@ -16,7 +22,7 @@ class Haddock3Service {
   async checkHaddockInstallation() {
     try {
       const { stdout } = await execAsync("haddock3 --version", { timeout: 5000, windowsHide: true });
-      if (stdout && stdout.includes("HADDOCK3")) {
+      if (stdout && /haddock3/i.test(stdout)) {
         this.haddockCommand = "haddock3";
         return true;
       }
@@ -123,9 +129,17 @@ top_models = 4
     const cleanedRecLines = [];
     for (const line of recContent.split("\n")) {
       if (line.startsWith("ATOM")) {
+        // HADDOCK3/topoaa cannot process PDB files with more than 99,999
+        // atoms. Receptor uploads can contain membrane/lipid components;
+        // retain the HLA protein and let topoaa rebuild its topology.
+        const residueName = line.substring(17, 20).trim().toUpperCase();
+        if (!STANDARD_AMINO_ACIDS.has(residueName)) continue;
         const cleaned = line.substring(0, 21) + "A" + line.substring(22);
         cleanedRecLines.push(cleaned);
       }
+    }
+    if (cleanedRecLines.length === 0) {
+      throw new Error("No standard amino-acid atoms were found in the receptor PDB");
     }
     await fs.writeFile(recSessionPath, cleanedRecLines.join("\n"));
 
@@ -193,6 +207,7 @@ top_models = 4
 
     const haddockAvailable = await this.checkHaddockInstallation();
     let haddockMetrics = null;
+    let syntheticResult = false;
 
     if (haddockAvailable) {
       console.log(`⚡ Executing HADDOCK3 via ${this.haddockCommand}...`);
@@ -254,7 +269,10 @@ top_models = 4
             const stdoutText = output.join("");
             const stderrText = errors.join("");
             if (code !== 0) {
-              const error = new Error(`HADDOCK3 exited with code ${code}`);
+              const details = (stderrText || stdoutText).trim();
+              const error = new Error(
+                `HADDOCK3 exited with code ${code}${details ? `: ${details.slice(-2000)}` : ""}`
+              );
               error.stdout = stdoutText;
               error.stderr = stderrText;
               reject(error);
@@ -329,9 +347,13 @@ top_models = 4
     }
 
     if (!complexGenerated) {
-      if (process.env.ALLOW_SYNTHETIC_HADDOCK_RESULTS === "false") {
-        throw new Error("HADDOCK3 did not produce a real complex result and fallback is disabled");
+      if (process.env.ALLOW_SYNTHETIC_HADDOCK_RESULTS !== "true") {
+        throw new Error(
+          "HADDOCK3 did not produce a real complex result. " +
+          "Install/configure HADDOCK3 or Docker and retry; synthetic benchmark results are disabled."
+        );
       }
+      syntheticResult = true;
       console.warn("⚠️ Utilizing high-resolution benchmark-aligned HADDOCK3 complex synthesis from reference dataset");
 
       // Extract complex structure from benchmark dataset if available, or assemble cleanly
@@ -449,6 +471,13 @@ Pipeline completed successfully.
       await fs.writeFile(logPath, syntheticLog);
     }
 
+    if (!haddockMetrics) {
+      throw new Error(
+        "HADDOCK3 completed without cluster metrics. " +
+        "The result cannot be reported as a valid docking score."
+      );
+    }
+
     const logContent = await fs.readFile(logPath, "utf-8");
     updateProgress({ percent: 98, stage: "cluster", detail: "Finalizing the selected cluster model and real HADDOCK score." });
 
@@ -463,6 +492,7 @@ Pipeline completed successfully.
       configContent: finalConfigContent,
       restraintsContent: restraintsContent,
       metrics: haddockMetrics,
+      syntheticResult,
     };
   }
 }

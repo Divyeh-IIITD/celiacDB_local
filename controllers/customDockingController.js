@@ -13,8 +13,14 @@ const dockingService = require("../services/dockingService");
 const fileService = require("../services/fileService");
 const haddock3Service = require("../services/haddock3Service");
 const restraintsService = require("../services/restraintsService");
+const rcsbService = require("../services/rcsbService");
 
 const dockingProgress = new Map();
+const FINAL_HADDOCK_PEPTIDE_ROOT = path.resolve(
+  __dirname,
+  "../Final_HADDOCK_Peptide/Final_HADDOCK_Peptide"
+);
+const FINAL_HADDOCK_CONFORMATIONS = ["ensemble", "helix", "ppii", "sheet"];
 
 function setDockingProgress(sessionId, update) {
   const previous = dockingProgress.get(sessionId) || {};
@@ -24,6 +30,50 @@ function setDockingProgress(sessionId, update) {
     sessionId,
     updatedAt: new Date().toISOString(),
   });
+}
+
+async function getFinalHaddockPeptideLibrary(proteins) {
+  let directories;
+  try {
+    directories = await fs.readdir(FINAL_HADDOCK_PEPTIDE_ROOT, { withFileTypes: true });
+  } catch (error) {
+    console.error("Unable to read prepared HADDOCK peptide folder:", error.message);
+    return [];
+  }
+
+  const proteinByPrefix = proteins
+    .map((protein) => ({
+      protein,
+      prefix: String(protein.name || "").replace(/^HLA[-\s]?/i, "").replace(/\s+/g, "").toUpperCase(),
+    }))
+    .filter(({ prefix }) => prefix);
+
+  const library = [];
+  for (const directory of directories.filter((entry) => entry.isDirectory()).sort((a, b) => a.name.localeCompare(b.name))) {
+    const files = {};
+    for (const conformation of FINAL_HADDOCK_CONFORMATIONS) {
+      const filename = `peptide_${conformation === "ensemble" ? "ens" : conformation}.pdb`;
+      const filePath = path.join(FINAL_HADDOCK_PEPTIDE_ROOT, directory.name, filename);
+      try {
+        await fs.access(filePath);
+        files[conformation] = `final-haddock/${directory.name}/${filename}`;
+      } catch (_) {
+        // A dataset is listed only with the conformations that actually exist.
+      }
+    }
+    if (Object.keys(files).length === 0) continue;
+
+    const proteinMatch = proteinByPrefix.find(({ prefix }) =>
+      directory.name.toUpperCase().startsWith(prefix)
+    );
+    library.push({
+      proteinId: proteinMatch ? proteinMatch.protein._id.toString() : "",
+      proteinName: proteinMatch ? proteinMatch.protein.name : "Prepared HADDOCK peptides",
+      peptideName: directory.name,
+      conformations: files,
+    });
+  }
+  return library;
 }
 
 async function buildDockingCacheKey({ proteinId, receptorPath, peptidePath, engine, configContent, receptorActiveResidues, peptideActiveResidues }) {
@@ -60,8 +110,6 @@ async function findCachedDockingResult(cacheKey, criteria = {}) {
       const sessionDir = path.join(tempDir, result.sessionId);
       await fs.access(path.join(sessionDir, "complex.pdb"));
 
-      if (result.cacheKey === cacheKey) return result;
-
       // Older Vina result files did not persist `engine`, and regenerated
       // library PDBs can have different formatting while representing the
       // same peptide. Reuse those results using stable docking metadata.
@@ -72,6 +120,10 @@ async function findCachedDockingResult(cacheKey, criteria = {}) {
         || String(result.dockingMethod || "").toUpperCase().includes("HADDOCK");
       if (requestedEngine === "vina" && isHaddockResult) continue;
       if (requestedEngine === "haddock3" && !isHaddockResult) continue;
+      // Never reuse legacy HADDOCK sessions that may contain benchmark or
+      // synthetic scores. Real results are marked when the CLI completes.
+      if (requestedEngine === "haddock3" && result.realHaddockRun !== true) continue;
+      if (result.cacheKey === cacheKey) return result;
       const effectiveResultEngine = resultEngine || (isHaddockResult ? "haddock3" : "vina");
 
       const sameMetadata = effectiveResultEngine === requestedEngine
@@ -365,6 +417,14 @@ async function performDirectPDBDocking(
     console.log(`✅ Found protein: ${protein.name}`);
 
     const receptorPath = path.join(__dirname, "../public/uploads", protein.mainProteinFile);
+    try {
+      await fs.access(receptorPath);
+    } catch (error) {
+      throw new Error(
+        `Receptor PDB file is missing for ${protein.name}: ${protein.mainProteinFile}. ` +
+        "Restore the protein files under public/uploads or re-import the protein data."
+      );
+    }
     const cacheKey = await buildDockingCacheKey({
       proteinId,
       receptorPath,
@@ -436,6 +496,7 @@ async function performDirectPDBDocking(
         configContent: haddockResult.configContent,
         restraintsContent: haddockResult.restraintsContent,
         haddockMetrics: haddockResult.metrics,
+        realHaddockRun: !haddockResult.syntheticResult,
         bestScore: {
           affinity: haddockResult.metrics ? haddockResult.metrics.haddockScore : null,
           mode: haddockResult.metrics ? haddockResult.metrics.clusterRank : null,
@@ -692,18 +753,24 @@ async function debugSessionFiles(sessionDir) {
 }
 
 class CustomDockingController {
+  async getRcsbReference(req, res) {
+    try {
+      const protein = await Protein.findById(req.params.proteinId).select("name").lean();
+      if (!protein) return res.status(404).json({ error: "Protein not found" });
+
+      const reference = await rcsbService.findReferenceStructure(protein.name);
+      res.json({ proteinName: protein.name, reference });
+    } catch (error) {
+      console.error("RCSB reference lookup failed:", error.message);
+      res.status(502).json({ error: "Unable to retrieve a reference structure from RCSB" });
+    }
+  }
+
   // Get custom docking form with optional pre-loaded peptide prep session
   async getCustomDockingForm(req, res) {
     try {
       const proteins = await Protein.find({ proteinType: "HLADQ" });
-      const peptideLibrary = proteins.flatMap((protein) =>
-        (protein.peptideLibrary || []).map((peptide) => ({
-          proteinId: protein._id.toString(),
-          proteinName: protein.name,
-          peptideName: peptide.peptideName,
-          conformations: peptide.conformations,
-        }))
-      );
+      const peptideLibrary = await getFinalHaddockPeptideLibrary(proteins);
       const prepSession = req.query.prepSession || null;
       let preparedData = null;
 
@@ -797,15 +864,41 @@ class CustomDockingController {
           return res.status(404).json({ error: "Protein not found" });
         }
 
-        const libraryEntry = proteinForLibrary?.peptideLibrary
-          ?.flatMap((peptide) =>
-            Object.entries(peptide.conformations || {}).map(([confType, storedName]) => ({
-              storedName,
-              peptideName: peptide.peptideName,
-              confType,
-            }))
-          )
-          .find((file) => file.storedName === selectedLibraryFile);
+        let libraryEntry;
+        let libraryPath;
+        if (selectedLibraryFile.startsWith("final-haddock/")) {
+          const relativePath = selectedLibraryFile.slice("final-haddock/".length);
+          const pathParts = relativePath.split("/");
+          if (
+            pathParts.length !== 2 ||
+            !pathParts[0] ||
+            !/^peptide_(ens|helix|ppii|sheet)\.pdb$/.test(pathParts[1])
+          ) {
+            return res.status(400).json({ error: "Invalid prepared peptide selection" });
+          }
+          libraryPath = path.resolve(FINAL_HADDOCK_PEPTIDE_ROOT, ...pathParts);
+          if (!libraryPath.startsWith(`${FINAL_HADDOCK_PEPTIDE_ROOT}${path.sep}`)) {
+            return res.status(400).json({ error: "Invalid prepared peptide selection" });
+          }
+          libraryEntry = {
+            storedName: selectedLibraryFile,
+            peptideName: pathParts[0],
+            confType: pathParts[1].replace(/^peptide_|\.pdb$/g, ""),
+          };
+        } else {
+          libraryEntry = proteinForLibrary?.peptideLibrary
+            ?.flatMap((peptide) =>
+              Object.entries(peptide.conformations || {}).map(([confType, storedName]) => ({
+                storedName,
+                peptideName: peptide.peptideName,
+                confType,
+              }))
+            )
+            .find((file) => file.storedName === selectedLibraryFile);
+          libraryPath = libraryEntry
+            ? path.join(__dirname, "../public/uploads", libraryEntry.storedName)
+            : null;
+        }
 
         if (!libraryEntry) {
           console.warn(`⚠️ Selected peptide ${selectedLibraryFile} not found in protein ${proteinForLibrary.name}`);
@@ -814,7 +907,6 @@ class CustomDockingController {
           });
         }
 
-        const libraryPath = path.join(__dirname, "../public/uploads", libraryEntry.storedName);
         try {
           const stat = await fs.stat(libraryPath);
           peptideUpload = {
@@ -983,6 +1075,7 @@ class CustomDockingController {
 
       // Don't expose internal errors to client
       const safeError =
+        process.env.NODE_ENV !== "production" ||
         error.message.includes("validation") ||
         error.message.includes("Invalid")
           ? error.message

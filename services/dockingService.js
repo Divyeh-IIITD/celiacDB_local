@@ -407,6 +407,7 @@ class DockingService {
         );
       } else if (isLinux) {
         vinaCommands.push(
+          "/home/iiitd/miniconda3/envs/celiacDB/bin/vina",
           "/home/iiitd/miniconda3/bin/vina",
           "/storage4tb-1/celiacDB/AutoDock Vina/vina.exe",
           "/usr/bin/vina",
@@ -432,32 +433,20 @@ class DockingService {
             env: process.env,
           };
 
-          const { stdout, stderr } = await execAsync(
-            `${cmd} --help`,
-            execOptions
-          );
+          const { stdout, stderr } = await execAsync(`${cmd} --version`, {
+            ...execOptions,
+            timeout: 5000,
+          });
 
           if (
             stdout.includes("AutoDock Vina") ||
             stdout.includes("Vina") ||
             stderr.includes("AutoDock Vina") ||
-            stdout.includes("usage:")
+            stderr.includes("Vina")
           ) {
             console.log(`✅ AutoDock Vina found with command: ${cmd}`);
-
-            // Try to get version
-            try {
-              const { stdout: versionOut, stderr: versionErr } =
-                await execAsync(`${cmd} --version`, {
-                  ...execOptions,
-                  timeout: 10000,
-                });
-              const versionInfo =
-                versionOut || versionErr || "Version info not available";
-              console.log(`📋 Vina version info: ${versionInfo.trim()}`);
-            } catch (versionError) {
-              console.log("📋 Vina version check failed, but command works");
-            }
+            const versionInfo = stdout || stderr || "Version info not available";
+            console.log(`📋 Vina version info: ${versionInfo.trim()}`);
 
             this.vinaCommand = cmd;
             this.vinaAvailable = true;

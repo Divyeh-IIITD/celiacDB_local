@@ -65,7 +65,7 @@
             <div class="row g-3">
               <div class="col-md-6">
                 <div class="form-check p-3 border rounded-3 bg-white shadow-sm">
-                  <input class="form-check-input" type="radio" name="engine" id="engineVina" value="vina" checked onchange="toggleEngineSelection()">
+                  <input class="form-check-input" type="radio" name="engine" id="engineVina" value="vina" onchange="toggleEngineSelection()">
                   <label class="form-check-label fw-bold text-dark" for="engineVina">
                     ⚡ AutoDock Vina
                   </label>
@@ -74,7 +74,7 @@
               </div>
               <div class="col-md-6">
                 <div class="form-check p-3 border rounded-3 bg-white shadow-sm">
-                  <input class="form-check-input" type="radio" name="engine" id="engineHaddock" value="haddock3" onchange="toggleEngineSelection()">
+                  <input class="form-check-input" type="radio" name="engine" id="engineHaddock" value="haddock3" checked onchange="toggleEngineSelection()">
                   <label class="form-check-label fw-bold text-primary" for="engineHaddock">
                     🔬 HADDOCK3 (Restraint-Driven)
                   </label>
@@ -98,6 +98,18 @@
                 <% }) %>
             </select>
             <div class="form-text">Choose the receptor protein for docking analysis.</div>
+            <div id="rcsbReferenceCard" class="mt-3" hidden>
+              <div class="alert alert-light border">
+                <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                  <div>
+                    <div class="fw-bold">🧊 RCSB reference crystal structure</div>
+                    <div id="rcsbReferenceStatus" class="small text-muted mt-1">Searching RCSB...</div>
+                    <div id="rcsbReferenceDetails" class="small mt-2"></div>
+                  </div>
+                  <div id="rcsbReferenceLinks" class="d-flex gap-2"></div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- PDB File Upload Section -->
@@ -144,34 +156,34 @@
                 <option value="">Choose a prepared peptide structure...</option>
                 <% peptideLibrary.forEach(peptide => { %>
                   <optgroup label="<%= peptide.proteinName %> — <%= peptide.peptideName %>" data-protein-id="<%= peptide.proteinId %>">
-                    <option value="<%= peptide.conformations.ensemble %>" 
+                    <% if (peptide.conformations.ensemble) { %><option value="<%= peptide.conformations.ensemble %>"
                             data-protein-id="<%= peptide.proteinId %>" 
                             data-protein-name="<%= peptide.proteinName %>" 
                             data-peptide-name="<%= peptide.peptideName %>" 
                             data-conformation="Ensemble">
                       <%= peptide.peptideName %> — Ensemble
-                    </option>
-                    <option value="<%= peptide.conformations.helix %>" 
+                    </option><% } %>
+                    <% if (peptide.conformations.helix) { %><option value="<%= peptide.conformations.helix %>"
                             data-protein-id="<%= peptide.proteinId %>" 
                             data-protein-name="<%= peptide.proteinName %>" 
                             data-peptide-name="<%= peptide.peptideName %>" 
                             data-conformation="Helix">
                       <%= peptide.peptideName %> — Helix
-                    </option>
-                    <option value="<%= peptide.conformations.ppii %>" 
+                    </option><% } %>
+                    <% if (peptide.conformations.ppii) { %><option value="<%= peptide.conformations.ppii %>"
                             data-protein-id="<%= peptide.proteinId %>" 
                             data-protein-name="<%= peptide.proteinName %>" 
                             data-peptide-name="<%= peptide.peptideName %>" 
                             data-conformation="PPII">
                       <%= peptide.peptideName %> — PPII
-                    </option>
-                    <option value="<%= peptide.conformations.sheet %>" 
+                    </option><% } %>
+                    <% if (peptide.conformations.sheet) { %><option value="<%= peptide.conformations.sheet %>"
                             data-protein-id="<%= peptide.proteinId %>" 
                             data-protein-name="<%= peptide.proteinName %>" 
                             data-peptide-name="<%= peptide.peptideName %>" 
                             data-conformation="Sheet">
                       <%= peptide.peptideName %> — Sheet
-                    </option>
+                    </option><% } %>
                   </optgroup>
                 <% }) %>
               </select>
@@ -489,6 +501,41 @@
     const proteinId = document.getElementById("proteinSelect").value;
     const librarySelect = document.getElementById("libraryFile");
     const preview = document.getElementById("fileValidationPreview");
+    const referenceCard = document.getElementById("rcsbReferenceCard");
+    const referenceStatus = document.getElementById("rcsbReferenceStatus");
+    const referenceDetails = document.getElementById("rcsbReferenceDetails");
+    const referenceLinks = document.getElementById("rcsbReferenceLinks");
+
+    if (referenceCard) {
+      referenceCard.hidden = !proteinId;
+      if (!proteinId) {
+        referenceStatus.textContent = "";
+        referenceDetails.textContent = "";
+        referenceLinks.innerHTML = "";
+      } else {
+        referenceStatus.textContent = "Searching RCSB...";
+        referenceDetails.textContent = "";
+        referenceLinks.innerHTML = "";
+        fetch(`/api/rcsb/reference/${encodeURIComponent(proteinId)}`)
+          .then((response) => response.ok ? response.json() : response.json().then((body) => Promise.reject(new Error(body.error || "RCSB lookup failed"))))
+          .then((body) => {
+            if (!body.reference) {
+              referenceStatus.textContent = "No matching experimental structure was found.";
+              return;
+            }
+            const reference = body.reference;
+            referenceStatus.textContent = `${reference.pdbId} — ${reference.experimentalMethod}`;
+            referenceDetails.textContent = `${reference.title}${reference.resolution ? ` | Resolution: ${reference.resolution} Å` : ""}`;
+            referenceLinks.innerHTML = `
+              <a class="btn btn-sm btn-outline-primary" href="${reference.rcsbUrl}" target="_blank" rel="noopener noreferrer">RCSB entry</a>
+              <a class="btn btn-sm btn-outline-secondary" href="${reference.viewerUrl}" target="_blank" rel="noopener noreferrer">3D viewer</a>
+            `;
+          })
+          .catch((error) => {
+            referenceStatus.textContent = error.message || "RCSB lookup failed.";
+          });
+      }
+    }
 
     Array.from(librarySelect.options).forEach((option) => {
       if (!option.value) {

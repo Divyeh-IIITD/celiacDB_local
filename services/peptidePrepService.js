@@ -1,6 +1,6 @@
 const fs = require("fs").promises;
 const path = require("path");
-const { exec } = require("child_process");
+const { exec, execFileSync } = require("child_process");
 const util = require("util");
 const execAsync = util.promisify(exec);
 
@@ -14,16 +14,27 @@ class PeptidePrepService {
     const candidates = [
       "C:\\Users\\Divyeh\\AppData\\Local\\Schrodinger\\PyMOL2\\python.exe",
       process.env.PYMOL_PYTHON,
+      "/home/iiitd/miniconda3/envs/celiacDB/bin/python",
+      "python3",
       "python",
     ].filter(Boolean);
 
     for (const p of candidates) {
       try {
         const fsSync = require("fs");
-        if (fsSync.existsSync(p)) {
+        if (path.isAbsolute(p) && !fsSync.existsSync(p)) {
+          continue;
+        }
+        execFileSync(p, ["-c", "import pymol"], {
+          stdio: "ignore",
+          timeout: 5000,
+        });
+        if (fsSync.existsSync(p) || !path.isAbsolute(p)) {
           return p;
         }
-      } catch (_) {}
+      } catch (error) {
+        continue;
+      }
     }
     return "python";
   }

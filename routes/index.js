@@ -53,6 +53,12 @@ router.get(
 
 // Get custom docking form
 router.get("/custom-docking", customDockingController.getCustomDockingForm);
+router.get(
+  "/api/rcsb/reference/:proteinId",
+  security.dockingLimiter,
+  security.sanitizeInput,
+  customDockingController.getRcsbReference
+);
 
 // Alternative route for backward compatibility
 router.get(

@@ -19,3 +19,6 @@ mongo_data/
 
 
 public/uploads/
+
+# Large local HADDOCK datasets (kept out of source control)
+precomputed_haddock/
