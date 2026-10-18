@@ -364,6 +364,8 @@
       }
 
       currentSessionData = result.data;
+      localStorage.setItem("celiacdb.preparedPeptideSession", currentSessionData.sessionId);
+      document.cookie = `celiacdb_prep_session=${encodeURIComponent(currentSessionData.sessionId)}; Max-Age=86400; Path=/; SameSite=Lax`;
 
       alertBox.className = "alert alert-success mt-3";
       alertBox.innerHTML = `<strong><i class="fas fa-check-circle me-1"></i> Success!</strong> Generated 3 conformers (Helix, Sheet, PPII) and ensemble for ${currentSessionData.sequence} (${currentSessionData.length} aa).`;
@@ -386,6 +388,9 @@
       const proceedBtn = document.getElementById("proceedDockingBtn");
       if (proceedBtn) {
         proceedBtn.href = `/custom-docking?prepSession=${currentSessionData.sessionId}`;
+        proceedBtn.onclick = () => {
+          window.location.assign(`/custom-docking?prepSession=${encodeURIComponent(currentSessionData.sessionId)}`);
+        };
       }
 
       // Initial load Helix

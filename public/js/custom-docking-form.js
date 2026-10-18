@@ -110,6 +110,30 @@ document.addEventListener("DOMContentLoaded", function () {
   const peptideFile = document.getElementById("peptideFile");
   const form = document.getElementById("customDockingForm");
   const submitBtn = document.getElementById("submitBtn");
+  if (peptideFile) peptideFile.required = false;
+  if (form) form.noValidate = true;
+
+  const prepSessionInput = document.getElementById("prepSessionId");
+  const queryPrepSession = new URLSearchParams(window.location.search).get("prepSession");
+  let storedPrepSession = "";
+  try {
+    storedPrepSession = localStorage.getItem("celiacdb.preparedPeptideSession") || "";
+  } catch (error) {
+    console.warn("Prepared peptide session storage is unavailable:", error.message);
+  }
+  const cookiePrepSession = document.cookie
+    .split(";")
+    .map((cookie) => cookie.trim())
+    .find((cookie) => cookie.startsWith("celiacdb_prep_session="))
+    ?.slice("celiacdb_prep_session=".length) || "";
+  const effectivePrepSession =
+    queryPrepSession || prepSessionInput?.value || storedPrepSession || decodeURIComponent(cookiePrepSession);
+  if (effectivePrepSession && prepSessionInput) {
+    prepSessionInput.value = effectivePrepSession;
+    if (form && !form.action.includes("prepSession=")) {
+      form.action = `/custom-docking?prepSession=${encodeURIComponent(effectivePrepSession)}`;
+    }
+  }
 
   // Initialize Bootstrap modal
   const modalElement = document.getElementById("progressModal");
@@ -495,16 +519,21 @@ document.addEventListener("DOMContentLoaded", function () {
     console.log(`🧬 Selected protein: ${proteinSelect.value}`);
 
     // Validate PDB file, prepared library peptide, or pre-loaded ensemble
-    const prepSessionInput = document.getElementById("prepSessionId");
-    const hasPreloadedEnsemble = prepSessionInput && prepSessionInput.value;
+    const hasPreloadedEnsemble = Boolean(
+      (prepSessionInput && prepSessionInput.value) || effectivePrepSession
+    );
+    if (prepSessionInput && prepSessionInput.value) {
+      console.log(`✅ Prepared peptide session available: ${prepSessionInput.value}`);
+    }
+    if (hasPreloadedEnsemble && this.action && !this.action.includes("prepSession=")) {
+      this.action = `/custom-docking?prepSession=${encodeURIComponent(prepSessionInput.value || effectivePrepSession)}`;
+    }
     const librarySelect = document.getElementById("libraryFile");
     const hasLibraryPeptide = librarySelect && librarySelect.value;
     const hasUploadedFile = peptideFile && peptideFile.files && peptideFile.files.length > 0;
 
     if (!hasPreloadedEnsemble && !hasLibraryPeptide && !hasUploadedFile) {
-      console.error(`❌ No peptide structure selected`);
-      alert("Please select a prepared peptide from the dropdown, upload a peptide PDB file, or prepare one with the Peptide Prep tool.");
-      return;
+      console.warn("No client-side peptide source detected; submitting so the server can resolve the prepared session.");
     }
 
     if (hasUploadedFile) {

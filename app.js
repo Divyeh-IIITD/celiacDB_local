@@ -47,21 +47,48 @@ app.use(security.requestLogger);
 // Basic middleware
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(express.json({ limit: "10mb" }));
+app.use((req, res, next) => {
+  if (
+    req.path === "/custom-docking" ||
+    req.path === "/custom-docking/peptide-prep" ||
+    req.path === "/js/custom-docking-form.js"
+  ) {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    res.setHeader("Surrogate-Control", "no-store");
+  }
+  next();
+});
 app.use(
   express.static(path.join(__dirname, "public"), {
     setHeaders: (res, path) => {
-      if (path.endsWith(".html")) {
+      if (
+        path.endsWith(".html") ||
+        path.endsWith("custom-docking-form.js") ||
+        path.endsWith("custom-docking-form.css")
+      ) {
         res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        res.setHeader("Pragma", "no-cache");
+        res.setHeader("Expires", "0");
       } else {
         res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
       }
     },
   })
 );
+app.get("/js/custom-docking-form-v9.js", (req, res) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.sendFile(path.join(__dirname, "public", "js", "custom-docking-form.js"));
+});
 
 
 // Serve temp results files for custom docking - FIXED PATH
 app.use("/temp-results", express.static(path.join(__dirname, "temp_results")));
+app.use(
+  "/final-haddock",
+  express.static(path.join(__dirname, "Final_HADDOCK_Peptide", "Final_HADDOCK_Peptide"))
+);
 
 // EJS setup with layouts
 app.set("view engine", "ejs");

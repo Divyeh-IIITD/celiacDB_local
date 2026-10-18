@@ -21,6 +21,13 @@ const FINAL_HADDOCK_PEPTIDE_ROOT = path.resolve(
   "../Final_HADDOCK_Peptide/Final_HADDOCK_Peptide"
 );
 const FINAL_HADDOCK_CONFORMATIONS = ["ensemble", "helix", "ppii", "sheet"];
+const PREP_SESSION_COOKIE = "celiacdb_prep_session";
+
+function getCookieValue(req, name) {
+  const cookies = String(req.headers.cookie || "").split(";");
+  const cookie = cookies.find((entry) => entry.trim().startsWith(`${name}=`));
+  return cookie ? decodeURIComponent(cookie.trim().slice(name.length + 1)) : "";
+}
 
 function setDockingProgress(sessionId, update) {
   const previous = dockingProgress.get(sessionId) || {};
@@ -771,7 +778,8 @@ class CustomDockingController {
     try {
       const proteins = await Protein.find({ proteinType: "HLADQ" });
       const peptideLibrary = await getFinalHaddockPeptideLibrary(proteins);
-      const prepSession = req.query.prepSession || null;
+      const prepSession =
+        req.query.prepSession || getCookieValue(req, PREP_SESSION_COOKIE) || null;
       let preparedData = null;
 
       if (prepSession) {
@@ -799,6 +807,10 @@ class CustomDockingController {
             ensPath,
             sequence: seq,
           };
+          res.setHeader(
+            "Set-Cookie",
+            `${PREP_SESSION_COOKIE}=${encodeURIComponent(safeSession)}; Max-Age=86400; Path=/; SameSite=Lax`
+          );
           console.log(`🧬 Loaded pre-prepared peptide ensemble from session ${safeSession} for sequence ${seq}`);
         } catch (_) {
           console.warn(`⚠️ Prepared session ${safeSession} ensemble not found or expired.`);
@@ -824,7 +836,13 @@ class CustomDockingController {
     console.log("🚀 CUSTOM PDB DOCKING STARTED");
 
     try {
-      const { proteinId, inputType, prepSessionId } = req.body;
+      const { proteinId, inputType = "pdb" } = req.body;
+      const prepSessionId = String(
+        req.body.prepSessionId ||
+        req.query.prepSession ||
+        getCookieValue(req, PREP_SESSION_COOKIE) ||
+        ""
+      ).trim();
 
       // Input sanitization and validation
       if (!proteinId || typeof proteinId !== "string") {

@@ -55,7 +55,9 @@
         <h4>🎯 Perform Direct PDB Docking</h4>
       </div>
       <div class="card-body">
-        <form id="customDockingForm" action="/custom-docking" method="POST" enctype="multipart/form-data">
+        <form id="customDockingForm"
+          action="/custom-docking<%= prepSession ? `?prepSession=${encodeURIComponent(prepSession)}` : '' %>"
+          method="POST" enctype="multipart/form-data" novalidate>
 
           <!-- Docking Engine Selection -->
           <div class="form-group mb-4">
@@ -131,7 +133,6 @@
                 </div>
                 <span class="badge bg-success px-3 py-2">Session Active</span>
               </div>
-              <input type="hidden" name="prepSessionId" id="prepSessionId" value="<%= preparedData.sessionId %>">
               <p class="small text-muted mb-2">To use a different file instead, select one below (overrides pre-loaded ensemble):</p>
             <% } else { %>
               <div class="alert alert-light border p-3 mb-3 rounded-3">
@@ -149,13 +150,15 @@
                 </div>
               </div>
             <% } %>
+            <input type="hidden" name="prepSessionId" id="prepSessionId"
+              value="<%= (typeof preparedData !== 'undefined' && preparedData ? preparedData.sessionId : (prepSession || '')) %>">
 
             <div class="mb-3">
               <label for="libraryFile" class="form-label fw-bold">Use a prepared HADDOCK peptide</label>
               <select class="form-select" id="libraryFile" name="libraryFile" onchange="onLibraryPeptideChange()">
                 <option value="">Choose a prepared peptide structure...</option>
                 <% peptideLibrary.forEach(peptide => { %>
-                  <optgroup label="<%= peptide.proteinName %> — <%= peptide.peptideName %>" data-protein-id="<%= peptide.proteinId %>">
+                  <optgroup label="<%= peptide.proteinName %> — <%= peptide.peptideName %>" data-protein-id="<%= peptide.proteinId %>" data-library-group="true">
                     <% if (peptide.conformations.ensemble) { %><option value="<%= peptide.conformations.ensemble %>"
                             data-protein-id="<%= peptide.proteinId %>" 
                             data-protein-name="<%= peptide.proteinName %>" 
@@ -537,12 +540,11 @@
       }
     }
 
-    Array.from(librarySelect.options).forEach((option) => {
-      if (!option.value) {
-        option.hidden = false;
-        return;
-      }
-      option.hidden = proteinId ? (option.dataset.proteinId !== proteinId) : false;
+    Array.from(librarySelect.querySelectorAll("optgroup[data-library-group]")).forEach((group) => {
+      group.hidden = Boolean(proteinId) && group.dataset.proteinId !== proteinId;
+      Array.from(group.options).forEach((option) => {
+        option.hidden = group.hidden;
+      });
     });
 
     const selectedOption = librarySelect.selectedOptions[0];
@@ -569,7 +571,6 @@
     const preview = document.getElementById("fileValidationPreview");
 
     if (librarySelect.value) {
-      fileInput.required = false;
       fileInput.value = ""; // Clear uploaded file
 
       const selectedOption = librarySelect.selectedOptions[0];
@@ -588,13 +589,12 @@
         }
       }
     } else {
-      const prepSessionInput = document.getElementById("prepSessionId");
-      fileInput.required = !(prepSessionInput && prepSessionInput.value);
       if (preview && preview.dataset.source === "library") {
         preview.style.display = "none";
         preview.innerHTML = "";
       }
     }
+
   }
 
   // Load proteins data from data attribute
@@ -620,4 +620,4 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <!-- Custom JavaScript -->
-<script src="/js/custom-docking-form.js?v=20261009_v4"></script>
+<script src="/js/custom-docking-form-v9.js"></script>

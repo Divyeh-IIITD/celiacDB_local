@@ -23,12 +23,16 @@ const PROTEIN_NAMES = {
 };
 
 async function walk(directory) {
-  const entries = await fs.readdir(directory, { withFileTypes: true });
   const files = [];
-  for (const entry of entries) {
-    const filePath = path.join(directory, entry.name);
-    if (entry.isDirectory()) files.push(...await walk(filePath));
-    else files.push(filePath);
+  const pending = [directory];
+  while (pending.length) {
+    const current = pending.pop();
+    const entries = await fs.readdir(current, { withFileTypes: true });
+    for (const entry of entries) {
+      const filePath = path.join(current, entry.name);
+      if (entry.isDirectory()) pending.push(filePath);
+      else files.push(filePath);
+    }
   }
   return files;
 }
@@ -91,7 +95,7 @@ async function copyGzipUpload(sourcePath, prefix) {
   return { storedName, size: stat.size, originalName: path.basename(sourcePath, ".gz") };
 }
 
-async function importDataset(dqName, protein, datasetPath) {
+async function importDataset(dqName, protein, datasetPath, proteinRoot) {
   const files = await walk(datasetPath);
   const capriPath = files.find((file) => path.basename(file) === "capri_clt.tsv");
   if (!capriPath) {
@@ -120,7 +124,10 @@ async function importDataset(dqName, protein, datasetPath) {
     ? await copyUpload(logPath, `${dqName.toLowerCase()}_haddock_log`)
     : null;
 
-  const peptideName = path.basename(datasetPath);
+  const peptideName = path
+    .relative(proteinRoot, datasetPath)
+    .split(path.sep)
+    .join("/");
   const result = {
     peptideName,
     complexStructureFile: model.storedName,
@@ -163,7 +170,9 @@ async function importDataset(dqName, protein, datasetPath) {
 async function findDatasetDirectories(directory) {
   const files = await walk(directory);
   const capriFiles = files.filter((file) => path.basename(file) === "capri_clt.tsv");
-  return capriFiles.map((file) => path.dirname(path.dirname(path.dirname(file))));
+  return [...new Set(
+    capriFiles.map((file) => path.dirname(path.dirname(path.dirname(file))))
+  )];
 }
 
 async function main() {
@@ -190,7 +199,8 @@ async function main() {
         imported += await importDataset(
           entry.name,
           protein,
-          datasetPath
+          datasetPath,
+          proteinRoot
         );
       }
       protein.totalPeptides = protein.dockingResults.length;

@@ -1,6 +1,7 @@
 const peptidePrepService = require("../services/peptidePrepService");
 const path = require("path");
 const fs = require("fs").promises;
+const PREP_SESSION_COOKIE = "celiacdb_prep_session";
 
 class PeptidePrepController {
   async getPeptidePrepPage(req, res) {
@@ -25,6 +26,10 @@ class PeptidePrepController {
 
       console.log(`🧬 Received request to generate conformers for sequence: ${sequence}`);
       const result = await peptidePrepService.generateConformers(sequence);
+      res.setHeader(
+        "Set-Cookie",
+        `${PREP_SESSION_COOKIE}=${encodeURIComponent(result.sessionId)}; Max-Age=86400; Path=/; SameSite=Lax`
+      );
       return res.json({ success: true, data: result });
     } catch (error) {
       console.error("❌ Error generating conformers:", error);
